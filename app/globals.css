@@ -20,12 +20,22 @@ body {
 
 }
 
+.theme-main {
+  --color-primary: #161618;
+  --color-secondary: #212124;
+  --color-tertiary: #4f46e5; /* bg-indigo-600 */
+  --color-neutral: #fcfcfc;
+  --color-accent: #4b5563;
+  --color-border: #525252;
+}
+
 .theme-dark {
-  --color-primary: rgb(27, 27, 27);
+  --color-primary: rgb(25, 25, 25);
   --color-secondary: rgb(31, 31, 31);
   --color-tertiary: #4f46e5; /* bg-indigo-600 */
   --color-neutral: #fcfcfc;
   --color-accent: #4b5563;
+  --color-border: #525252;
 }
 
 .theme-light {

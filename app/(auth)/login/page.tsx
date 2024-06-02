@@ -1,22 +1,42 @@
+"use client";
 import React from "react";
-//import { useForm, SubmitHandler } from "react-hook-form";
+import axios from "axios";
+import { useMutation } from "@tanstack/react-query";
+import { useForm, SubmitHandler } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
 
-import Input from "@/_common/components/Input"
+import Input from "@/_common/components/Input";
+import Button from "@/_common/components/Button";
 
 type LoginInputs = {
   username: string;
   password: string;
 };
-export default function LogInPage() {
-    /*
+
+const schema = z.object({
+  username: z.string().email(),
+  password: z.string().min(7).max(25),
+});
+
+export default function LoginPage() {
   const {
     register,
     handleSubmit,
-    watch,
     formState: { errors },
-  } = useForm<LoginInputs>();
+  } = useForm<LoginInputs>({
+    resolver: zodResolver(schema),
+  });
 
-  */   
+  const loginMutation = useMutation({
+    mutationFn: (credentials: LoginInputs) => {
+      return axios.post("/api/login", credentials);
+    },
+  });
+
+  const onSubmit: SubmitHandler<LoginInputs> = (data) => {
+    loginMutation.mutate(data);
+  };
 
   return (
     <div className="flex h-screen items-center justify-center bg-red flex-1">
@@ -30,36 +50,23 @@ export default function LogInPage() {
 
           <div className="mt-5">
             <div>
-              <form action="#" method="POST" className="space-y-6">
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-10">
                 <Input
                   label="Email Address"
                   id="email"
-                  name="email"
-                  type="email"
                   autoComplete="email"
-                  required
+                  error={errors.username}
+                  {...register("username", { required: true })}
+                />
+                <Input
+                  label="Password"
+                  id="password"
+                  autoComplete="current-password"
+                  error={errors.password}
+                  {...register("password", { required: true })}
                 />
 
-                <div>
-                  <label
-                    htmlFor="password"
-                    className="block text-sm font-medium leading-6 text-neutral"
-                  >
-                    Password
-                  </label>
-                  <div className="mt-2">
-                    <input
-                      id="password"
-                      name="password"
-                      type="password"
-                      autoComplete="current-password"
-                      required
-                      className="block w-full bg-secondary text-neutral border-none rounded border-0 p-3.5 shadow-sm ring-1 ring-inset ring-accent placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 focus:outline-none sm:text-sm sm:leading-6"
-                    />
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between mt-10">
                   <div className="flex items-center">
                     <input
                       id="remember-me"
@@ -84,15 +91,12 @@ export default function LogInPage() {
                     </a>
                   </div>
                 </div>
-
-                <div>
-                  <button
-                    type="submit"
-                    className="flex w-full justify-center rounded bg-indigo-600 px-3 py-2.5 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-                  >
-                    Sign on
-                  </button>
-                </div>
+                <Button
+                  text={"Sign on"}
+                  handleClick={() => {
+                    console.log("test");
+                  }}
+                />
               </form>
             </div>
 
@@ -130,7 +134,6 @@ export default function LogInPage() {
                     Twitter
                   </span>
                 </a>
-
                 <a
                   href="#"
                   className="flex w-full items-center justify-center gap-3 rounded bg-[#24292F] px-3 py-1.5 text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#24292F]"

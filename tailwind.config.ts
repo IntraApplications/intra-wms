@@ -18,6 +18,10 @@ const config: Config = {
 
         /* used to compliment borders that use a primary background */
         accent: 'var(--color-accent)',
+
+        /* border also */
+
+        border: 'var(--color-border)'
         
       }
     },
