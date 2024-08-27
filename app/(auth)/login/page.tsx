@@ -14,7 +14,7 @@ type LoginInputs = {
   password: string;
 };
 
-const schema = z.object({
+const loginSchema = z.object({
   username: z.string().email(),
   password: z.string().min(7).max(25),
 });
@@ -25,7 +25,7 @@ export default function LoginPage() {
     handleSubmit,
     formState: { errors },
   } = useForm<LoginInputs>({
-    resolver: zodResolver(schema),
+    resolver: zodResolver(loginSchema),
   });
 
   const loginMutation = useMutation({
@@ -40,17 +40,17 @@ export default function LoginPage() {
 
   return (
     <div className="flex h-screen items-center justify-center bg-red flex-1">
-      <div className="flex flex-1 mb-20 flex-col p-10 bg-secondary rounded justify-center px-4 py-12 sm:px-6 lg:flex-none lg:px-20 xl:px-24">
-        <div className="mx-auto w-full max-w-sm lg:w-96">
+      <div className="flex flex-1 mb-20 flex-col bg-secondary rounded justify-center px-28 py-14 lg:flex-none">
+        <div className="mx-auto w-full max-w-sm lg:w-96 justify-center">
           <div>
-            <h2 className="mt-8 text-2xl font-bold leading-9 tracking-tight text-neutral">
+            <h2 className="text-2xl font-bold leading-9 tracking-tight text-neutral">
               Single Sign-On (SSO)
             </h2>
           </div>
 
-          <div className="mt-5">
-            <div>
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-10">
+          <div className="mt-10">
+            <div className="justify-center">
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-10 justify-center">
                 <Input
                   label="Email Address"
                   id="email"
@@ -93,10 +93,8 @@ export default function LoginPage() {
                 </div>
                 <Button
                   text={"Sign on"}
-                  handleClick={() => {
-                    console.log("test");
-                  }}
-                />
+                  type={"submit"}
+                  />
               </form>
             </div>
 
