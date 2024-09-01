@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import { DetailedHTMLProps, InputHTMLAttributes } from "react";
 import { FieldError } from "react-hook-form";
 
@@ -16,43 +16,27 @@ type InputProps = CustomInputProps & NativeInputProps;
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
   ({ label, error, ...inputProps }, ref) => {
-    const [hasText, setHasText] = useState(!!inputProps.value);
-
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      setHasText(!!e.target.value);
-    };
-
     return (
-      <div className="relative">
-        <div className="mt-2">
-          <input
-            {...inputProps}
-            ref={ref}
-            className={`block w-full bg-secondary text-neutral border-none rounded-md p-5 shadow-sm ring-1 ring-inset ${
-              error
-                ? "ring-red-500 focus:ring-red-500"
-                : "ring-accent focus:ring-indigo-600"
-            } focus:ring-2 focus:ring-inset focus:outline-none sm:text-sm sm:leading-6 peer`}
-            placeholder=" "
-            onChange={handleInputChange}
-          />
-          <label
-            className={`absolute left-3 transition-all duration-200 ease-in-out transform origin-left pointer-events-none text-gray-400 bg-secondary  ${
-              hasText
-                ? "-top-2 text-xs scale-80 px-3"
-                : "top-5 scale-100"
-            } peer-focus:-top-2 peer-focus:left-3 peer-focus:text-xs peer-focus:scale-80 px-3`}
-          >
-            {label}
-          </label>
+      <div className="relative mt-6">
+        <label className="block text-sm font-medium text-accent mb-2">
+          {label}
+        </label>
+        <input
+          {...inputProps}
+          ref={ref}
+          className={`block w-full bg-primary text-neutral border border-solid rounded-md p-3 shadow-sm placeholder-secondary ${
+            error
+              ? "border-red-500 focus:border-red-500 animate-shake"
+              : "border-border focus:border-border"
+          } focus:outline-none focus:shadow-none hover:brightness-110 transition duration-200 ease-in-out sm:text-sm sm:leading-6`}
+        />
+        <div className="relative">
+          {error && (
+            <p className="left-0 top-full mt-1 text-xs text-red-500 animate-slideIn">
+              {error.message}
+            </p>
+          )}
         </div>
-        <p
-          className={`absolute top-full left-5 mt-2 text-xs text-red-500 transition-opacity duration-600 ${
-            error ? "opacity-100" : "opacity-0"
-          }`}
-        >
-          {error?.message}
-        </p>
       </div>
     );
   }

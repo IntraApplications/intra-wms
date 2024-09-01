@@ -11,7 +11,10 @@ const config: Config = {
       colors: {
         primary: 'var(--color-primary)',
         secondary: 'var(--color-secondary)',
+        secondaryBorder: 'var(--color-secondary-border)',
         tertiary: 'var(--color-tertiary)',
+        tertiaryBorder: 'var(--color-tertiary-border)',
+        
         
         /* opposite of primary, used for text on primary backgrounds */
         neutral: 'var(--color-neutral)', 
