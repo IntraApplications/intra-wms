@@ -21,29 +21,80 @@ body {
 }
 
 .theme-main {
-  --color-primary: #161618;
-  --color-secondary: #212124;
-  --color-tertiary: #4f46e5; /* bg-indigo-600 */
-  --color-neutral: #fcfcfc;
-  --color-accent: #4b5563;
-  --color-border: #525252;
+  --color-primary: #161618; /* Darkest background */
+  --color-secondary: #383737; /* Container background */
+  --color-secondary-border: #5D5D5D;
+  --color-tertiary: #309464; /* Button and highlights */
+  --color-tertiary-border: #47E197; /* Button and highlights */
+  --color-neutral: #FFFFFF; /* Text */
+  --color-accent: #D9D9D9; /* Border and light gray */
+  --color-border: #363535; /* Border color */
 }
 
 .theme-dark {
-  --color-primary: rgb(25, 25, 25);
-  --color-secondary: rgb(31, 31, 31);
-  --color-tertiary: #4f46e5; /* bg-indigo-600 */
-  --color-neutral: #fcfcfc;
-  --color-accent: #4b5563;
-  --color-border: #525252;
+  --color-primary: #161618;
+  --color-secondary: #383737;
+  --color-secondary-border: #5D5D5D;
+  --color-tertiary: #309464;
+  --color-tertiary-border: #47E197; /* Button and highlights */
+  --color-neutral: #FFFFFF;
+  --color-accent: #D9D9D9;
+  --color-border: #363535;
 }
 
 .theme-light {
-  --color-primary: #f5f5f5;
-  --color-secondary: #fcfcfc;
-  --color-tertiary: #1976D2; /* bg-indigo-600 */
-  --color-neutral: #313434;
-  --color-accent: #d6d7d8;
+  --color-primary: #FFFFFF;
+  --color-secondary: #F5F5F5;
+  --color-tertiary: #1976D2;
+  --color-neutral: #161618;
+  --color-accent: #D9D9D9;
+  --color-border: #707070;
+}
+
+/* Define the fadeIn keyframe animation */
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-4px);
+  }
+  50% {
+    transform: translateX(4px);
+  }
+  75% {
+    transform: translateX(-4px);
+  }
+}
+
+@keyframes slideIn {
+  0% {
+    transform: translateY(10px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-shake {
+  animation: shake 0.3s ease-in-out;
+}
+
+.animate-slideIn {
+  animation: slideIn 0.3s ease-in-out;
 }
 
 
@@ -52,3 +103,5 @@ body {
     text-wrap: balance;
   }
 }
+
+

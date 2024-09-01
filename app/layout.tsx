@@ -1,8 +1,13 @@
 import type { Metadata } from "next";
 
 import { Inter } from "next/font/google";
+
 import Providers from "./providers";
 import "./globals.css";
+
+import { config } from "@fortawesome/fontawesome-svg-core";
+import "@fortawesome/fontawesome-svg-core/styles.css";
+config.autoAddCss = false;
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -17,7 +22,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="h-full theme-light bg-primary">
+    <html lang="en" className="h-full theme-main bg-primary">
       <body className={inter.className}>
         <Providers>{children}</Providers>
       </body>
