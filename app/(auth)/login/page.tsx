@@ -12,6 +12,8 @@ import { faGithub, faGoogle } from "@fortawesome/free-brands-svg-icons";
 import Input from "@/_common/components/Input";
 import Button from "@/_common/components/Button";
 import OauthButton from "@/_common/components/OauthButton";
+import { supabase } from "@/_lib/supabase";
+//import { createClient } from "@supabase/supabase-js";
 
 type LoginInputs = {
   username: string;
@@ -41,8 +43,15 @@ export default function LoginPage() {
     },
   });
 
-  const onSubmit: SubmitHandler<LoginInputs> = (data) => {
-    loginMutation.mutate(data);
+  const onSubmit: SubmitHandler<LoginInputs> = async (data) => {
+    //loginMutation.mutate(data);
+
+    await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `http://localhost:3000/login`,
+      },
+    });
   };
 
   return (

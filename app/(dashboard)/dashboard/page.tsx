@@ -1,7 +1,8 @@
 "use client";
+import withAuth from "@/hoc/withAuth";
 import React from "react";
 
-export default function DashboardPage() {
+function DashboardPage() {
   return (
     <div className="flex h-screen bg-primary text-white">
       {/* Sidebar */}
@@ -159,3 +160,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+export default withAuth(DashboardPage);
