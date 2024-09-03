@@ -43,15 +43,25 @@ export default function LoginPage() {
     },
   });
 
-  const onSubmit: SubmitHandler<LoginInputs> = async (data) => {
-    //loginMutation.mutate(data);
+  const onSubmit: SubmitHandler<LoginInputs> = async (data) => {};
 
-    await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `http://localhost:3000/login`,
-      },
-    });
+  const onOauthSubmit = async (provider: "google" | "github") => {
+    // HANDLE ERROR
+    if (provider === "google") {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `http://localhost:3000/dashboard`,
+        },
+      });
+    } else {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "github",
+        options: {
+          redirectTo: `http://localhost:3000/dashboard`,
+        },
+      });
+    }
   };
 
   return (
@@ -77,16 +87,17 @@ export default function LoginPage() {
                 <OauthButton
                   icon={faGoogle}
                   text={"Continue with Google"}
-                  type={"submit"}
+                  type={"button"}
                   oauthType="google"
+                  handleClick={() => onOauthSubmit("google")}
                 />
                 <OauthButton
                   icon={faGithub}
                   text={"Continue with Github"}
-                  type={"submit"}
+                  type={"button"}
                   oauthType="github"
+                  handleClick={() => onOauthSubmit("github")}
                 />
-
                 <div className="flex items-center mt-2 justify-center">
                   <div className="flex-grow border-t border-secondary"></div>
                   <span className="px-4 text-sm text-accent">or</span>
