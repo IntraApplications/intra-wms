@@ -24,7 +24,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
         <input
           {...inputProps}
           ref={ref}
-          className={`block w-full bg-primary text-neutral border border-solid rounded-md p-3 shadow-sm placeholder-secondary ${
+          className={`block w-full bg-primary text-neutral border border-solid rounded-md p-3 shadow-sm placeholder-secondaryBorder ${
             error
               ? "border-red-500 focus:border-red-500 animate-shake"
               : "border-border focus:border-border"
