@@ -24,7 +24,10 @@ const config: Config = {
 
         /* border also */
 
-        border: 'var(--color-border)'
+        border: 'var(--color-border)',
+        alert: 'var(--color-alert)',
+        dashboard: 'var(--color-dashboard)',
+        sidenav: 'var(--color-sidenav)'
         
       }
     },
