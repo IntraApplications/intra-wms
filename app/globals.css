@@ -39,14 +39,32 @@ html, body, #__next {
 }
 
 .theme-dark {
-  --color-primary: #161618;
-  --color-secondary: #383737;
-  --color-secondary-border: #5D5D5D;
-  --color-tertiary: #309464;
-  --color-tertiary-border: #47E197; /* Button and highlights */
-  --color-neutral: #FFFFFF;
-  --color-accent: #D9D9D9;
-  --color-border: #363535;
+  --color-primary: #0D0D0F; /* Darkest background, more intense black */
+  --color-secondary: #2A2A2D; /* Container background, darker gray */
+  --color-secondary-border: #474747; /* Darkened border */
+  --color-tertiary: #267A52; /* Button and highlights, deeper green */
+  --color-tertiary-border: #3FC380; /* Button and highlights, more modern and vibrant */
+  --color-neutral: #F2F2F2; /* Text, softened white */
+  --color-accent: #B3B3B3; /* Border and light gray, slightly darker */
+  --color-border: #2E2D2D; /* Border color, darker */
+  --color-alert: #1A1A1A; /* Alert, even darker */
+  --color-dashboard: #141415; /* Dashboard background, almost pure black */
+  --color-sidenav: #8C8C8C; /* Sidenav text, more muted */
+}
+
+
+.theme-dark2 {
+  --color-primary: #141416; /* Darker background */
+  --color-secondary: #333232; /* Container background */
+  --color-secondary-border: #555555; /* Slightly darker border */
+  --color-tertiary: #2B8658; /* Button and highlights, slightly deeper green */
+  --color-tertiary-border: #43CC88; /* Button and highlights, slightly darker green */
+  --color-neutral: #F0F0F0; /* Text, slightly off-white */
+  --color-accent: #CFCFCF; /* Border and light gray, slightly darker */
+  --color-border: #323232; /* Darker border color */
+  --color-alert: #1F1F1F; /* Slightly darker alert */
+  --color-dashboard: #181818; /* Darker dashboard background */
+  --color-sidenav: #9A9A9A; /* Slightly darker sidenav text */
 }
 
 .theme-light {
