@@ -5,20 +5,17 @@ import {
   PeopleOutline,
   SchoolOutlined,
   StoreOutlined,
-  Tv,
-  GitHub,
-  Inventory2,
-  ExpandMore,
-  BuildOutlined,
+  DvrOutlined,
+  AccountTreeOutlined,
+  AppsOutlined,
   CodeOutlined,
   Brush,
   Campaign,
-  DvrOutlined,
-  AppsOutlined,
-  AccountTreeOutlined,
+  ExpandMore,
 } from "@mui/icons-material";
 import Image from "next/image";
 import IntraLogo from "@/_assets/intra-icon-large-transparent.png";
+import withAuth from "@/hoc/withAuth";
 
 const navItems = [
   { name: "Home", icon: HomeOutlined },
@@ -36,7 +33,7 @@ const dropdownItems = [
   { name: "Marketing", icon: Campaign },
 ];
 
-export default function DashboardLayout() {
+function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [selectedDropdownItem, setSelectedDropdownItem] = useState(0);
@@ -71,11 +68,16 @@ export default function DashboardLayout() {
               className="flex items-center justify-between bg-dashboard border border-border px-2 py-3 rounded-[3px] cursor-pointer"
               onClick={toggleDropdown}
             >
-              <div className="flex items-center ml">
-                {/* Render the selected dropdown icon */}
+              <div className="flex items-center ml-0.5">
+                {/* Render the selected dropdown icon with size control */}
                 {(() => {
                   const SelectedIcon = dropdownItems[selectedDropdownItem].icon;
-                  return <SelectedIcon className="text-tertiaryBorder mr-2" />;
+                  return (
+                    <SelectedIcon
+                      className="text-tertiaryBorder mr-2"
+                      fontSize="small"
+                    />
+                  );
                 })()}
                 <p className="text-white font-normal text-xs">
                   {dropdownItems[selectedDropdownItem].name}
@@ -85,6 +87,7 @@ export default function DashboardLayout() {
                 className={`text-white transform transition-transform ${
                   dropdownOpen ? "rotate-180" : ""
                 }`}
+                fontSize="small"
               />
             </div>
             {dropdownOpen && (
@@ -95,7 +98,7 @@ export default function DashboardLayout() {
                     className="flex items-center p-2 hover:bg-gray-700 cursor-pointer"
                     onClick={() => handleDropdownClick(index)}
                   >
-                    <item.icon className="text-white mr-2" />
+                    <item.icon className="text-white mr-2" fontSize="small" />
                     <p className="text-white font-normal text-sm">
                       {item.name}
                     </p>
@@ -116,7 +119,7 @@ export default function DashboardLayout() {
                 onClick={() => setActiveIndex(index)}
               >
                 <div className="w-7 mr-2 flex justify-center">
-                  <item.icon className="text-md" />
+                  <item.icon className="text-sm" fontSize="small" />
                 </div>
                 <p className="font-normal text-xs">{item.name}</p>
               </div>
@@ -125,8 +128,12 @@ export default function DashboardLayout() {
         </div>
       </div>
       <div className="h-full w-full p-3 bg-primary flex items-center">
-        <div className="h-full w-full bg-dashboard rounded-md border border-border"></div>
+        <div className="h-full w-full bg-dashboard rounded-md border border-border">
+          {children}
+        </div>
       </div>
     </div>
   );
 }
+
+export default withAuth(DashboardLayout);
