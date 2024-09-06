@@ -7,6 +7,8 @@ interface ButtonProps {
   text: string;
   type: "submit" | "reset" | "button" | undefined;
   handleClick?: () => void;
+  loading?: boolean;
+  size?: "xxs" | "xs" | "small" | "medium" | "large"; // Added "xxs" size
 }
 
 export default function Button({
@@ -15,24 +17,53 @@ export default function Button({
   handleClick,
   icon,
   oauthType,
+  loading = false,
+  size = "medium", // Default size
 }: ButtonProps) {
+  // Define size classes
+  const sizeClasses = {
+    xxs: "px-3 py-0.5 text-[11px]", // Extra extra small size
+    xs: "px-4 py-1 text-[11px]", // Extra small size
+    small: "px-3 py-2 text-sm", // Small size
+    medium: "px-4 py-3 text-base", // Medium size
+    large: "px-6 py-4 text-lg", // Large size
+  };
+
   return (
     <div>
       <button
         onClick={handleClick}
         type={type}
-        className={`relative flex items-center justify-center w-full mt-0 rounded border bg-tertiary border-tertiaryBorder 
-         px-3 py-3 text-sm leading-6 text-white shadow-sm hover:brightness-125 transition duration-300 ease-in-out`}
+        className={`w-full relative flex items-center justify-center whitespace-nowrap rounded border bg-tertiary border-tertiaryBorder 
+         ${sizeClasses[size]} leading-6 text-white shadow-sm hover:brightness-125 transition duration-300 ease-in-out`}
+        disabled={loading}
       >
-        {icon && (
+        <span className="flex items-center text-white font-medium justify-center">
+          {loading ? (
+            <div className="loader-container">
+              <div className="loader"></div>
+            </div>
+          ) : (
+            text
+          )}
+        </span>
+        {/* Move icon to the right */}
+        {icon && !loading && (
           <FontAwesomeIcon
             icon={icon}
-            className="absolute left-20 text-accent text-xl" // Icon is positioned and sized
+            className={`ml-2 text-tertiaryBorder ${
+              size === "xxs"
+                ? "text-sm"
+                : size === "xs"
+                ? "text-base"
+                : size === "small"
+                ? "text-lg"
+                : size === "large"
+                ? "text-2xl"
+                : "text-xl"
+            }`}
           />
         )}
-        <span className="flex items-center text-accent font-medium justify-center w-full">
-          {text}
-        </span>
       </button>
     </div>
   );

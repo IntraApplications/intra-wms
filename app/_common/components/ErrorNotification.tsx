@@ -20,45 +20,47 @@ export default function ErrorNotification({
 
   useEffect(() => {
     if (!isVisible) {
-      // Wait for the slide-out animation to finish before calling onClose
       const timer = setTimeout(onClose, 300);
       return () => clearTimeout(timer);
     }
 
     const autoCloseTimer = setTimeout(() => {
       setIsVisible(false);
-    }, 3000); // Auto close after 3 seconds
+    }, 5000);
 
     return () => clearTimeout(autoCloseTimer);
   }, [isVisible, onClose]);
 
   return isVisible ? (
     <div
-      className={`fixed bottom-4 right-4 flex items-start justify-between w-96 p-4 bg-alert rounded-lg shadow-lg 
+      className={`fixed bottom-4 right-4 flex items-center w-96 bg-alert rounded-lg shadow-lg overflow-hidden
       ${isVisible ? "animate-slideIn" : "animate-slideOut"}`}
     >
-      <div className="flex items-start">
-        <div className="flex-shrink-0">
+      <div className="w-1 bg-red-500 h-full absolute left-0"></div>
+      <div className="flex items-center p-4 pl-6 w-full relative">
+        <div className="flex-shrink-0 mr-4 flex items-center justify-center">
           <FontAwesomeIcon
             icon={faExclamationTriangle}
-            className="text-red-500 dark:text-red-300 h-6 w-6"
+            size="lg"
+            className="text-red-500 dark:text-red-300 h-8 w-8"
           />
         </div>
-        <div className="ml-3">
-          <h3 className="text-sm font-medium text-red-800 dark:text-red-200">
+        <div className="flex-grow pr-6">
+          <h3 className="text-xs font-medium text-red-800 dark:text-red-200">
             {title || "An error occurred"}
           </h3>
-          <div className="text-sm text-red-600 dark:text-red-400">
+          <div className="mt-1 text-xs text-red-600 dark:text-red-400">
             <p>{message}</p>
           </div>
         </div>
-      </div>
-      <div className="ml-4 flex-shrink-0 flex">
         <button
           onClick={() => setIsVisible(false)}
-          className="inline-flex text-secondary brightness-125 hover:brightness-200 focus:outline-none"
+          className="absolute top-2 right-2 inline-flex text-accent hover:text-white focus:outline-none transition-colors duration-200"
         >
-          <FontAwesomeIcon icon={faTimes} />
+          <FontAwesomeIcon
+            icon={faTimes}
+            className="h-4 w-4 text-secondaryBorder"
+          />
         </button>
       </div>
     </div>

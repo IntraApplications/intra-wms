@@ -61,7 +61,7 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
                 className=""
               />
             </div>
-            <p className="text-white text-md font-medium">Pingl</p>
+            <p className="text-white text-md font-medium">Intra app</p>
           </div>
           <div className="relative mb-4 mt-6">
             <div

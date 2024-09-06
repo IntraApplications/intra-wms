@@ -107,14 +107,14 @@ export default function AuthLayout({
         ({ error } = await supabase.auth.signInWithOAuth({
           provider: "google",
           options: {
-            redirectTo: `http://localhost:3000/dashboard`,
+            redirectTo: `http://localhost:3000/dashboard/workspaces`,
           },
         }));
       } else {
         ({ error } = await supabase.auth.signInWithOAuth({
           provider: "github",
           options: {
-            redirectTo: `http://localhost:3000/dashboard`,
+            redirectTo: `http://localhost:3000/dashboard/workspaces`,
           },
         }));
       }
