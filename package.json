@@ -18,6 +18,8 @@
     "@hookform/resolvers": "^3.4.2",
     "@mui/icons-material": "^6.0.2",
     "@mui/material": "^6.0.2",
+    "@octokit/auth-app": "^7.1.1",
+    "@octokit/rest": "^21.0.2",
     "@supabase/ssr": "^0.5.1",
     "@supabase/supabase-js": "^2.45.3",
     "@tanstack/react-query": "^5.40.0",
