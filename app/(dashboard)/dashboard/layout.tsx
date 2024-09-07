@@ -24,7 +24,7 @@ const navItems = [
   { name: "Marketplace", icon: StoreOutlined },
   { name: "Workspaces", icon: DvrOutlined },
   { name: "Worktrees", icon: AccountTreeOutlined },
-  { name: "Applications", icon: AppsOutlined },
+  { name: "Integrations", icon: AppsOutlined },
 ];
 
 const dropdownItems = [

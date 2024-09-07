@@ -1,4 +1,3 @@
-// app/dashboard/workspaces/page.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -15,39 +14,13 @@ export default function WorkspacePage() {
   const [errorNotification, setErrorNotification] = useState(null);
 
   // Custom hook for GitHub integration
-  const { isLoading, error, repos, initiateInstall, checkInstallation } =
+  const { isLoading, error, initiateInstall, checkInstallation } =
     useGitHubIntegration();
-
-  // Next.js router hooks
-  const searchParams = useSearchParams();
 
   // Effect to check for GitHub installation on component mount or URL change
   useEffect(() => {
-    const installation_id = searchParams.get("installation_id");
-    if (installation_id) {
-      checkInstallation(installation_id);
-    }
-  }, [searchParams, checkInstallation]);
-
-  // Handler for creating a new workspace
-  const handleCreateWorkspace = async (repoName: string) => {
-    try {
-      const response = await fetch("/api/create-workspace", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ repo_name: repoName }),
-      });
-      const data = await response.json();
-      console.log("Workspace creation response:", data);
-      setHasWorkspaces(true);
-    } catch (err) {
-      console.error("Error creating workspace:", err);
-      setErrorNotification({
-        title: "Workspace Creation Failed",
-        message: "Unable to create workspace. Please try again later.",
-      });
-    }
-  };
+    checkInstallation("PinglMobile");
+  }, []);
 
   // Update error notification when there's an error from the GitHub integration
   useEffect(() => {
@@ -71,9 +44,10 @@ export default function WorkspacePage() {
         </div>
       </div>
 
-      <div className="flex justify-center mt-20">
+      {/* Vertically Center the Virtual Workspace Container */}
+      <div className="flex justify-center items-center h-[calc(100vh-44px)]">
         <div className="h-[600px] w-[1100px]">
-          {hasWorkspaces || repos.length > 0 ? (
+          {hasWorkspaces || false ? (
             <div className="flex justify-between">
               <h1 className="text-accent text-2xl">Virtual Workspaces</h1>
               <Button

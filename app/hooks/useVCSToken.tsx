@@ -1,4 +1,4 @@
-// hooks/useVCSToken.tsx
+"use client"
 import { useState, useEffect } from "react";
 import { supabase } from "@/_lib/supabase";
 import axios from "axios";
