@@ -4,39 +4,25 @@ import { useState, useEffect } from "react";
 import { faPlus } from "@fortawesome/free-solid-svg-icons";
 import { CodeOutlined, ChevronRight, DvrOutlined } from "@mui/icons-material";
 import Button from "@/_common/components/Button";
-import Notification from "@/_common/components/Notification";
-import { useSearchParams } from "next/navigation";
 import { useGitHubIntegration } from "@/hooks/useGitHubIntegration";
 import { useWebSocketContext } from "@/contexts/WebSocketContext";
 
 export default function WorkspacePage() {
-  // State for managing workspaces and UI
   const [hasWorkspaces, setHasWorkspaces] = useState(false);
 
   // Custom hook for GitHub integration
   const { isLoading, error, initiateInstall, checkInstallation } =
     useGitHubIntegration();
 
-  // WebSocket context
+  // WebSocket context for receiving messages and showing notifications
   const { message, showNotification } = useWebSocketContext();
 
   // Effect to check for GitHub installation on component mount
   useEffect(() => {
     checkInstallation("PinglMobile");
-  }, [checkInstallation]);
+  }, []);
 
-  // Effect to handle WebSocket messages
-  useEffect(() => {
-    if (message && message.type === "github_webhook") {
-      showNotification({
-        type: "info",
-        title: "GitHub Webhook Received",
-        message: `Event: ${message.event}, Repository: ${message.repository}`,
-      });
-    }
-  }, [message, showNotification]);
-
-  // Effect to show error notification
+  // Handle GitHub integration errors and show error notifications
   useEffect(() => {
     if (error) {
       showNotification({
@@ -45,11 +31,10 @@ export default function WorkspacePage() {
         message: error,
       });
     }
-  }, [error, showNotification]);
+  }, [error]);
 
   return (
     <div className="h-full">
-      {/* Breadcrumb Section */}
       <div className="border-b border-border w-full h-11 flex items-center">
         <div className="ml-5 flex gap-2 items-center">
           <CodeOutlined fontSize="medium" className="text-tertiaryBorder" />
@@ -59,7 +44,6 @@ export default function WorkspacePage() {
         </div>
       </div>
 
-      {/* Vertically Center the Virtual Workspace Container */}
       <div className="flex justify-center items-center h-[calc(100vh-44px)]">
         <div className="h-[600px] w-[1100px]">
           {hasWorkspaces ? (

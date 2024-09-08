@@ -1,22 +1,18 @@
 import { NextResponse } from 'next/server';
 import { broadcastMessage } from '@/api/websocket/route';
 
-// GitHub webhook handler
 export async function POST(request) {
-
   const body = await request.json();
-  console.log(body)
   const event = request.headers.get('x-github-event');
-  console.log(event)
 
   if (event === 'installation' && body.action === 'deleted') {
-    const integrationId = body.integration.id;
-    console.log(`Integration deleted: ${integrationId}`);
+    const installationId = body.installation.id;
+    console.log(`Integration deleted: ${installationId}`);
 
-    // Broadcast the event to WebSocket clients
     broadcastMessage({
+      type: 'github_webhook',
       event: 'integration_deleted',
-      integration_id: integrationId,
+      integration_id: installationId,
     });
   }
 

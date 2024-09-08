@@ -1,5 +1,12 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
-import Notification from "@/_common/components/Notification"; // Import the Notification component we created earlier
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useRef,
+} from "react";
+import io from "socket.io-client";
+import Notification from "@/_common/components/Notification"; // Import the Notification component
 
 // Define the shape of a notification
 type NotificationData = {
@@ -24,26 +31,43 @@ export const WebSocketProvider: React.FC = ({ children }) => {
   const [ws, setWs] = useState<WebSocket | null>(null);
   const [notifications, setNotifications] = useState<NotificationData[]>([]);
 
+  const [socket, setSocket] = useState(null);
+  const [messages, setMessages] = useState([]);
+
+  // Ref to track if a notification has been shown for a specific message
+  const hasShownNotificationRef = useRef(new Set()); // Use Set to track unique messages
+
   useEffect(() => {
-    const socket = new WebSocket("ws://localhost:3000"); // Replace with your WebSocket URL
-    setWs(socket);
+    console.log("testt");
+    // Connect to WebSocket server
+    const socketConnection = io("http://localhost:3001"); // Change this URL to your WebSocket server
+    console.log(socketConnection);
 
-    socket.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      setMessage(data);
+    // Listen for connection
+    socketConnection.on("connect", () => {
+      console.log("Connected to WebSocket server");
+    });
 
-      // Check if the message is a GitHub webhook
-      if (data.type === "github_webhook") {
-        showNotification({
-          type: "info",
-          title: "GitHub Webhook Received",
-          message: `Event: ${data.event}, Repository: ${data.repository}`,
-        });
-      }
-    };
+    // Listen for broadcast messages
+    socketConnection.on("github_webhook", (message) => {
+      showNotification({
+        title: "Github Disconnected",
+        message: "Github integration disconnected",
+        type: "info",
+      });
+      setMessages((prevMessages) => [...prevMessages, message]);
+    });
 
+    // Handle disconnect
+    socketConnection.on("disconnect", () => {
+      console.log("Disconnected from WebSocket server");
+    });
+
+    setSocket(socketConnection);
+
+    // Cleanup on unmount
     return () => {
-      socket.close(); // Clean up WebSocket on component unmount
+      socketConnection.disconnect();
     };
   }, []);
 
@@ -58,11 +82,13 @@ export const WebSocketProvider: React.FC = ({ children }) => {
     setNotifications((prevNotifications) =>
       prevNotifications.filter((_, i) => i !== index)
     );
+    hasShownNotificationRef.current.clear(); // Reset ref when a notification is cleared
   };
 
   return (
     <WebSocketContext.Provider value={{ message, ws, showNotification }}>
       {children}
+      {/* Render notifications at the root */}
       {notifications.map((notification, index) => (
         <Notification
           key={index}
