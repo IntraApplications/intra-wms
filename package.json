@@ -35,6 +35,8 @@
     "react-dom": "^18",
     "react-hook-form": "^7.51.5",
     "sequelize": "^6.37.3",
+    "socket.io-client": "^4.7.5",
+    "ws": "^8.18.0",
     "zod": "^3.23.8"
   },
   "devDependencies": {

@@ -4,33 +4,48 @@ import { useState, useEffect } from "react";
 import { faPlus } from "@fortawesome/free-solid-svg-icons";
 import { CodeOutlined, ChevronRight, DvrOutlined } from "@mui/icons-material";
 import Button from "@/_common/components/Button";
-import ErrorNotification from "@/_common/components/ErrorNotification";
+import Notification from "@/_common/components/Notification";
 import { useSearchParams } from "next/navigation";
 import { useGitHubIntegration } from "@/hooks/useGitHubIntegration";
+import { useWebSocketContext } from "@/contexts/WebSocketContext";
 
 export default function WorkspacePage() {
   // State for managing workspaces and UI
   const [hasWorkspaces, setHasWorkspaces] = useState(false);
-  const [errorNotification, setErrorNotification] = useState(null);
 
   // Custom hook for GitHub integration
   const { isLoading, error, initiateInstall, checkInstallation } =
     useGitHubIntegration();
 
-  // Effect to check for GitHub installation on component mount or URL change
+  // WebSocket context
+  const { message, showNotification } = useWebSocketContext();
+
+  // Effect to check for GitHub installation on component mount
   useEffect(() => {
     checkInstallation("PinglMobile");
-  }, []);
+  }, [checkInstallation]);
 
-  // Update error notification when there's an error from the GitHub integration
+  // Effect to handle WebSocket messages
+  useEffect(() => {
+    if (message && message.type === "github_webhook") {
+      showNotification({
+        type: "info",
+        title: "GitHub Webhook Received",
+        message: `Event: ${message.event}, Repository: ${message.repository}`,
+      });
+    }
+  }, [message, showNotification]);
+
+  // Effect to show error notification
   useEffect(() => {
     if (error) {
-      setErrorNotification({
+      showNotification({
+        type: "error",
         title: "GitHub Integration Error",
         message: error,
       });
     }
-  }, [error]);
+  }, [error, showNotification]);
 
   return (
     <div className="h-full">
@@ -47,7 +62,7 @@ export default function WorkspacePage() {
       {/* Vertically Center the Virtual Workspace Container */}
       <div className="flex justify-center items-center h-[calc(100vh-44px)]">
         <div className="h-[600px] w-[1100px]">
-          {hasWorkspaces || false ? (
+          {hasWorkspaces ? (
             <div className="flex justify-between">
               <h1 className="text-accent text-2xl">Virtual Workspaces</h1>
               <Button
@@ -86,14 +101,6 @@ export default function WorkspacePage() {
           )}
         </div>
       </div>
-
-      {errorNotification && (
-        <ErrorNotification
-          title={errorNotification.title}
-          message={errorNotification.message}
-          onClose={() => setErrorNotification(null)}
-        />
-      )}
     </div>
   );
 }

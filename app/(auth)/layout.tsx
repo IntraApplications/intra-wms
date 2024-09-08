@@ -13,8 +13,7 @@ import Button from "@/_common/components/Button";
 import OauthButton from "@/_common/components/OauthButton";
 import { supabase } from "@/_lib/supabase";
 import { usePathname } from "next/navigation";
-import ErrorNotification from "@/_common/components/ErrorNotification";
-//import { createClient } from "@supabase/supabase-js";
+import { useWebSocketContext } from "@/contexts/WebSocketContext";
 
 type LoginInputs = {
   username: string;
@@ -35,8 +34,8 @@ export default function AuthLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const [error, setError] = useState<string | null>(null); // State to manage error messages
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const { showNotification } = useWebSocketContext();
 
   const isLoginPage = pathname === "/login";
   const isSignupPage = pathname === "/signup";
@@ -54,7 +53,11 @@ export default function AuthLayout({
       return axios.post("/api/login", credentials);
     },
     onError: (error) => {
-      setError("Login failed. Please check your credentials and try again."); // Set the error message
+      showNotification({
+        type: "error",
+        title: "Login Error",
+        message: "Login failed. Please check your credentials and try again.",
+      });
     },
   });
 
@@ -71,8 +74,13 @@ export default function AuthLayout({
           throw new Error(signupData.error.message);
         }
       } catch (err) {
+        showNotification({
+          type: "error",
+          title: "Login Error",
+          message: err.message || "Log in failed. Please try again.",
+        });
+      } finally {
         setIsLoading(false);
-        setError(err.message || "Log in failed. Please try again.");
       }
     } else if (isSignupPage) {
       try {
@@ -88,16 +96,22 @@ export default function AuthLayout({
           throw new Error(signupData.error.message);
         }
       } catch (err) {
-        setIsLoading(false);
-        setError(err.message || "Sign up failed. Please try again.");
+        showNotification({
+          type: "error",
+          title: "Signup Error",
+          message: err.message || "Sign up failed. Please try again.",
+        });
       } finally {
         setIsLoading(false);
       }
     } else {
       setIsLoading(false);
-      setError("Invalid login page"); // Handle unexpected case
+      showNotification({
+        type: "error",
+        title: "Navigation Error",
+        message: "Invalid login page",
+      });
     }
-    setIsLoading(false);
   };
 
   const onOauthSubmit = async (provider: "google" | "github") => {
@@ -123,19 +137,16 @@ export default function AuthLayout({
         throw new Error(error.message);
       }
     } catch (err) {
-      setError(err.message || "OAuth login failed. Please try again.");
+      showNotification({
+        type: "error",
+        title: "OAuth Error",
+        message: err.message || "OAuth login failed. Please try again.",
+      });
     }
   };
 
   return (
     <div className="flex h-screen items-center justify-center bg-red flex-1">
-      {error && (
-        <ErrorNotification
-          title="Error"
-          message={error}
-          onClose={() => setError(null)}
-        />
-      )}
       <div className="flex flex-col w-full max-w-sm lg:w-96 items-center justify-center">
         {children}
 
@@ -182,6 +193,7 @@ export default function AuthLayout({
                     {...register("password", { required: true })}
                     placeholder="Enter your password"
                   />
+                  <input></input>
                   <div className="grid mt-6 absolute right-0 top-0">
                     <div className="text-xs text-center mb-2">
                       <a
