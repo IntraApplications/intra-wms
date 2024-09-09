@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase } from "@/_lib/supabase";
+import { supabase } from "@/_lib/supabase/supabase-client";
 import { githubApp } from "@/_lib/github";
 import { useNotificationContext } from "@/contexts/NotificationContext";
 import { RequestError } from "octokit";

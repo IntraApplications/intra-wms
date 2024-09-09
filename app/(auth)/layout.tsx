@@ -11,7 +11,7 @@ import { faGithub, faGoogle } from "@fortawesome/free-brands-svg-icons";
 import Input from "@/_common/components/Input";
 import Button from "@/_common/components/Button";
 import OauthButton from "@/_common/components/OauthButton";
-import { supabase } from "@/_lib/supabase";
+import { supabase } from "@/_lib/supabase/supabase-client";
 import { usePathname } from "next/navigation";
 import { useWebSocketContext } from "@/contexts/WebSocketContext";
 

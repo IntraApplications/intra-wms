@@ -22,8 +22,8 @@ const navItems = [
   { name: "Employees", icon: PeopleOutline },
   { name: "Onboarding", icon: SchoolOutlined },
   { name: "Marketplace", icon: StoreOutlined },
-  { name: "Workspaces", icon: DvrOutlined },
-  { name: "Worktrees", icon: AccountTreeOutlined },
+  { name: "Pods", icon: DvrOutlined },
+  { name: "Flows", icon: AccountTreeOutlined },
   { name: "Integrations", icon: AppsOutlined },
 ];
 

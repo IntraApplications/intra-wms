@@ -1,11 +1,13 @@
-"use client"
+"use client";
 import { useState, useEffect } from "react";
-import { supabase } from "@/_lib/supabase";
+import { supabase } from "@/_lib/supabase/supabase-client";
 import axios from "axios";
 
 const useVCSToken = () => {
   const [providerToken, setProviderToken] = useState<string | null>(null);
-  const [providerRefreshToken, setProviderRefreshToken] = useState<string | null>(null);
+  const [providerRefreshToken, setProviderRefreshToken] = useState<
+    string | null
+  >(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -44,16 +46,20 @@ const useVCSToken = () => {
     try {
       // This is a placeholder. You'll need to implement the actual refresh logic
       // using GitHub's OAuth refresh flow
-      const response = await axios.post('https://github.com/login/oauth/access_token', {
-        refresh_token: providerRefreshToken,
-        client_id: process.env.NEXT_PUBLIC_GITHUB_CLIENT_ID,
-        client_secret: process.env.GITHUB_CLIENT_SECRET,
-        grant_type: 'refresh_token'
-      }, {
-        headers: {
-          'Accept': 'application/json'
+      const response = await axios.post(
+        "https://github.com/login/oauth/access_token",
+        {
+          refresh_token: providerRefreshToken,
+          client_id: process.env.NEXT_PUBLIC_GITHUB_CLIENT_ID,
+          client_secret: process.env.GITHUB_CLIENT_SECRET,
+          grant_type: "refresh_token",
+        },
+        {
+          headers: {
+            Accept: "application/json",
+          },
         }
-      });
+      );
 
       const newToken = response.data.access_token;
       setProviderToken(newToken);
