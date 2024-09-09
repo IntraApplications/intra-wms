@@ -9,6 +9,7 @@ import WorkspaceCreationModal from "@/_common/components/workspace/WorkspaceCrea
 import { useGitHubIntegration } from "@/hooks/useGitHubIntegration";
 import { useWebSocketContext } from "@/contexts/WebSocketContext";
 import { useNotificationContext } from "@/contexts/NotificationContext";
+import { createClient } from "@/_lib/supabase/supabase-client";
 
 export default function WorkspacePage() {
   const [hasWorkspaces, setHasWorkspaces] = useState(false);
@@ -16,6 +17,21 @@ export default function WorkspacePage() {
   const { message } = useWebSocketContext();
   const { showNotification } = useNotificationContext();
 
+  useEffect(() => {
+    // declare the data fetching function
+    const fetchData = async () => {
+      console.log("test");
+      const supabase = createClient();
+      console.log(supabase);
+      const data = await supabase.auth.getUser();
+      console.log(data);
+    };
+
+    // call the function
+    fetchData()
+      // make sure to catch any error
+      .catch(console.error);
+  }, []);
   const handleCreateWorkspace = () => {
     setIsModalOpen(true);
   };

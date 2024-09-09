@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 // The client you created from the Server-Side Auth instructions
-import { supabase } from "@/_lib/supabase/supabase-client";
+import { createClient } from "@/_lib/supabase/supabase-server";
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
@@ -8,6 +8,7 @@ export async function GET(request: Request) {
   // if "next" is in param, use it as the redirect URL
   const next = searchParams.get("next") ?? "/";
 
+  const supabase = createClient();
   if (code) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {

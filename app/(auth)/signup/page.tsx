@@ -1,5 +1,3 @@
-"use client";
-
 import Image from "next/image";
 import IntraLogo from "@/_assets/intra logo-3-large-transparent.png";
 export default function SignupPage() {

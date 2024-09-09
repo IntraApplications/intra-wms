@@ -15,15 +15,14 @@ import {
 } from "@mui/icons-material";
 import Image from "next/image";
 import IntraLogo from "@/_assets/intra-icon-large-transparent.png";
-import withAuth from "@/hoc/withAuth";
 
 const navItems = [
   { name: "Home", icon: HomeOutlined },
   { name: "Employees", icon: PeopleOutline },
   { name: "Onboarding", icon: SchoolOutlined },
   { name: "Marketplace", icon: StoreOutlined },
-  { name: "Pods", icon: DvrOutlined },
-  { name: "Flows", icon: AccountTreeOutlined },
+  { name: "Workspaces", icon: DvrOutlined },
+  { name: "Worktrees", icon: AccountTreeOutlined },
   { name: "Integrations", icon: AppsOutlined },
 ];
 
@@ -119,7 +118,7 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
                 onClick={() => setActiveIndex(index)}
               >
                 <div className="w-7 mr-2 flex justify-center">
-                  <item.icon className="text-sm" fontSize="small" />
+                  <item.icon fontSize="small" />
                 </div>
                 <p className="font-normal text-xs">{item.name}</p>
               </div>
@@ -136,4 +135,4 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
   );
 }
 
-export default withAuth(DashboardLayout);
+export default DashboardLayout;

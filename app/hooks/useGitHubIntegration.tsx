@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase } from "@/_lib/supabase/supabase-client";
+import { createClient } from "@/_lib/supabase/supabase-client";
 import { githubApp } from "@/_lib/github";
 import { useNotificationContext } from "@/contexts/NotificationContext";
 import { RequestError } from "octokit";
+import { create } from "domain";
 
 interface GitHubIntegrationState {
   isLoading: boolean;
@@ -43,6 +44,7 @@ export function useGitHubIntegration() {
     setState((prev) => ({ ...prev, isLoading: true, error: null }));
 
     try {
+      const supabase = createClient();
       const { data, error: fetchError } = await supabase
         .from("organizations")
         .select("name, github_org_name, github_app_installation_id")
@@ -131,7 +133,7 @@ export function useGitHubIntegration() {
   };
 
   const initiateInstall = async () => {
-    setState((prev) => ({ ...prev, isLoading: true, error: null }));
+    setState((prev) => ({ ...prev, error: null }));
 
     try {
       const response = await fetch("/api/github-app-install");

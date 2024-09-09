@@ -1,26 +1,27 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { IconDefinition } from "@fortawesome/free-solid-svg-icons";
+import { redirect } from "next/navigation";
+import { createClient } from "@/_lib/supabase/supabase-server";
+import { handleOAuth } from "@/(auth)/actions";
 
 interface OauthButtonProps {
   oauthType: "google" | "github";
   icon: IconDefinition;
   text: string;
-  type: "submit" | "reset" | "button" | undefined;
-  handleClick?: () => void;
 }
 
 export default function OauthButton({
   text,
-  type,
-  handleClick,
   icon,
   oauthType,
 }: OauthButtonProps) {
   return (
-    <div>
+    <form action={handleOAuth}>
+      {/* Hidden input to pass oauthType */}
+      <input type="hidden" name="oauthType" value={oauthType} />
+
       <button
-        onClick={handleClick}
-        type={type}
+        type="submit"
         className={`relative flex items-center justify-center w-full mt-0 rounded border  ${
           oauthType === "google"
             ? "bg-secondary border-secondaryBorder"
@@ -29,12 +30,12 @@ export default function OauthButton({
       >
         <FontAwesomeIcon
           icon={icon}
-          className="absolute left-16 sm:w-20 sm:left-14 text-accent text-xl" // Icon is positioned and sized
+          className="absolute left-16 sm:w-20 sm:left-14 text-accent text-xl"
         />
         <span className="flex items-center text-accent font-normal justify-center w-full">
           {text}
         </span>
       </button>
-    </div>
+    </form>
   );
 }
