@@ -193,7 +193,6 @@ export default function AuthLayout({
                     {...register("password", { required: true })}
                     placeholder="Enter your password"
                   />
-                  <input></input>
                   <div className="grid mt-6 absolute right-0 top-0">
                     <div className="text-xs text-center mb-2">
                       <a

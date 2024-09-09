@@ -1,94 +1,156 @@
 "use client";
+
 import { useEffect, useState } from "react";
 import { supabase } from "@/_lib/supabase";
 import { githubApp } from "@/_lib/github";
 import { useNotificationContext } from "@/contexts/NotificationContext";
+import { RequestError } from "octokit";
+
+interface GitHubIntegrationState {
+  isLoading: boolean;
+  error: string | null;
+  isConnected: boolean;
+  orgName: string | null;
+  githubOrgName: string | null;
+}
 
 export function useGitHubIntegration() {
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [installationId, setInstallationId] = useState<string | null>(null);
-  const [repos, setRepos] = useState<any[]>([]);
+  const [state, setState] = useState<GitHubIntegrationState>({
+    isLoading: true,
+    error: null,
+    isConnected: false,
+    orgName: null,
+    githubOrgName: null,
+  });
 
-  // Handle GitHub integration errors and show error notifications
   const { showNotification } = useNotificationContext();
 
   useEffect(() => {
-    if (error) {
+    checkInstallation();
+  }, []);
+
+  useEffect(() => {
+    if (state.error) {
       showNotification({
         type: "error",
         title: "GitHub Integration Error",
-        message: error,
+        message: state.error,
       });
     }
-  }, [error]);
+  }, [state.error]);
 
-  // Initiate GitHub App installation process
+  const checkInstallation = async () => {
+    setState((prev) => ({ ...prev, isLoading: true, error: null }));
+
+    try {
+      const { data, error: fetchError } = await supabase
+        .from("organizations")
+        .select("name, github_org_name, github_app_installation_id")
+        .eq("name", "pingl") // Use dynamic organization name
+        .single();
+
+      if (fetchError || !data) {
+        setState((prev) => ({
+          ...prev,
+          isLoading: false,
+          isConnected: false,
+          error: "No connected organizations found.",
+        }));
+        return;
+      }
+
+      const {
+        name: orgName,
+        github_org_name: githubOrgName,
+        github_app_installation_id: installationId,
+      } = data;
+
+      if (!installationId) {
+        // "No GitHub installation found for this organization.",
+        setState((prev) => ({
+          ...prev,
+          isLoading: false,
+          isConnected: false,
+          orgName,
+          githubOrgName,
+        }));
+        return;
+      }
+
+      // Step 2: Verify if the installation is valid using GitHub's API
+      const octokit = await githubApp.getInstallationOctokit(
+        Number(installationId)
+      );
+
+      const { data: installationData } =
+        await octokit.rest.apps.getInstallation({
+          installation_id: Number(installationId),
+        });
+
+      console.log(installationData);
+
+      if (!installationData) {
+        //  "GitHub app is no longer integrated or has no accessible repositories.",
+        setState((prev) => ({
+          ...prev,
+          isLoading: false,
+          isConnected: false,
+          orgName,
+          githubOrgName,
+        }));
+        return;
+      }
+
+      // Step 3: Store fetched repositories and update state
+      setState((prev) => ({
+        ...prev,
+        isLoading: false,
+        isConnected: true,
+        orgName,
+        githubOrgName,
+      }));
+    } catch (err) {
+      // RequestError - octokit
+      if (err.status === 404) {
+        // installation has not been found
+        setState((prev) => ({
+          ...prev,
+          isLoading: false,
+          isConnected: false,
+        }));
+        return;
+      }
+      setState((prev) => ({
+        ...prev,
+        isLoading: false,
+        isConnected: false,
+        error: "Github ",
+      }));
+      console.error("Error checking installation:", err);
+    }
+  };
+
   const initiateInstall = async () => {
-    setIsLoading(true);
-    setError(null);
+    setState((prev) => ({ ...prev, isLoading: true, error: null }));
+
     try {
       const response = await fetch("/api/github-app-install");
       const data = await response.json();
       window.open(data.installUrl, "_blank");
     } catch (err) {
-      setError("Failed to initiate GitHub App installation.");
+      setState((prev) => ({
+        ...prev,
+        error: "Failed to initiate GitHub App installation.",
+      }));
       console.error("Error initiating GitHub App installation:", err);
     } finally {
-      setIsLoading(false); // Ensure loading state is reset
+      setState((prev) => ({ ...prev, isLoading: false }));
     }
   };
 
-  // Fetch GitHub Installation ID from Supabase and check if the app is still integrated
-  const checkInstallation = async (orgName: string) => {
-    console.log("testtttfdsfdfsd");
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      // Step 1: Fetch installation ID from the Supabase database
-      const { data, error: fetchError } = await supabase
-        .from("organizations")
-        .select("github_app_installation_id")
-        .eq("github_org_name", orgName) // Use dynamic organization name
-        .single();
-
-      if (fetchError || !data) {
-        throw new Error(
-          "Failed to retrieve GitHub installation ID from the database."
-        );
-      }
-
-      const fetchedInstallationId = data.github_app_installation_id;
-      setInstallationId(fetchedInstallationId);
-
-      // Step 2: Verify if the installation is still integrated via GitHub's API
-      const octokit = await githubApp.getInstallationOctokit(
-        Number(fetchedInstallationId)
-      );
-
-      const { data: repoData } =
-        await octokit.rest.apps.listReposAccessibleToInstallation({
-          installation_id: Number(fetchedInstallationId),
-        });
-
-      if (!repoData || repoData.repositories.length === 0) {
-        throw new Error(
-          "No repositories found or GitHub app is no longer integrated."
-        );
-      }
-
-      // Step 3: Store fetched repositories
-      setRepos(repoData.repositories);
-    } catch (err) {
-      setError(
-        "Unable to verify the GitHub app installation or fetch repositories."
-      );
-      console.error("Error checking installation:", err);
-    } finally {
-      setIsLoading(false); // Ensure loading state is reset
-    }
+  return {
+    ...state,
+    initiateInstall,
+    checkInstallation,
   };
-
-  return { isLoading, error, initiateInstall, checkInstallation, repos };
 }

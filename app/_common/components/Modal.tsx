@@ -26,7 +26,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children }) => {
 
   return (
     <div
-      className={`fixed inset-0 z-50 flex items-center justify-center transition-opacity duration-300 ${
+      className={`fixed inset-0 z-50 flex items-center rounded-[5px] justify-center transition-opacity duration-300 ${
         isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
       }`}
     >
@@ -35,7 +35,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children }) => {
         onClick={onClose}
       ></div>
       <div
-        className={`relative bg-[#1E1E1E] rounded-[5px] shadow-xl overflow-hidden transition-all duration-300 ease-in-out ${
+        className={`relative bg-primary rounded-[5px] shadow-xl overflow-hidden transition-all duration-300 ease-in-out ${
           isOpen ? "scale-100 opacity-100" : "scale-95 opacity-0"
         }`}
       >

@@ -13,14 +13,8 @@ import { useNotificationContext } from "@/contexts/NotificationContext";
 export default function WorkspacePage() {
   const [hasWorkspaces, setHasWorkspaces] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
-
-  const { isLoading, checkInstallation } = useGitHubIntegration();
   const { message } = useWebSocketContext();
   const { showNotification } = useNotificationContext();
-
-  useEffect(() => {
-    checkInstallation("PinglMobile");
-  }, []);
 
   const handleCreateWorkspace = () => {
     setIsModalOpen(true);
@@ -52,7 +46,6 @@ export default function WorkspacePage() {
                 colorType="tertiary"
                 size="small"
                 handleClick={handleCreateWorkspace}
-                loading={isLoading}
               />
             </div>
           ) : (
@@ -74,7 +67,6 @@ export default function WorkspacePage() {
                   size="small"
                   colorType="tertiary"
                   handleClick={handleCreateWorkspace}
-                  loading={isLoading}
                   className="mt-10"
                 />
               </div>

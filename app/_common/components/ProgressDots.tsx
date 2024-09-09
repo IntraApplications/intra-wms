@@ -15,7 +15,7 @@ const ProgressDots: React.FC<ProgressDotsProps> = ({
         <div
           key={index}
           className={`w-2 h-2 rounded-full transition-all duration-300 ${
-            index === currentStep ? "bg-green-500 scale-125" : "bg-gray-600"
+            index === currentStep ? "bg-gray-400 scale-125" : "bg-gray-600"
           }`}
         />
       ))}

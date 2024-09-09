@@ -62,7 +62,7 @@ const WorkspaceCreationModal: React.FC<WorkspaceCreationModalProps> = ({
 
   return (
     <div
-      className="bg-primary rounded-sm overflow-hidden transition-all duration-300 ease-in-out flex flex-col"
+      className="bg-primary rounded-[5px] border border-border overflow-hidden transition-all duration-300 ease-in-out flex flex-col"
       style={{ width: `${modalSize.width}px`, height: `${modalSize.height}px` }}
     >
       <div className="border-b border-gray-700 h-[54px] px-6 flex justify-between items-center">
@@ -86,6 +86,7 @@ const WorkspaceCreationModal: React.FC<WorkspaceCreationModalProps> = ({
         />
       </div>
       <div className="border-t border-gray-700 h-[54px] px-6 flex justify-between items-center">
+        {/*
         <Button
           text="Back"
           size="small"
@@ -94,9 +95,13 @@ const WorkspaceCreationModal: React.FC<WorkspaceCreationModalProps> = ({
           handleClick={handleBack}
           disabled={currentStep === 0}
         />
+  */}
+        <div></div>
         <div className="flex justify-center items-center">
           <ProgressDots currentStep={currentStep} totalSteps={steps.length} />
         </div>
+        <div></div>
+        {/*
         <Button
           text={currentStep === steps.length - 1 ? "Create" : "Next"}
           size="small"
@@ -104,6 +109,7 @@ const WorkspaceCreationModal: React.FC<WorkspaceCreationModalProps> = ({
           colorType="secondary"
           handleClick={handleNext}
         />
+  */}
       </div>
     </div>
   );
