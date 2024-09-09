@@ -62,7 +62,7 @@ const WorkspaceCreationModal: React.FC<WorkspaceCreationModalProps> = ({
 
   return (
     <div
-      className="bg-[#1A1A1B] rounded-sm overflow-hidden transition-all duration-300 ease-in-out flex flex-col"
+      className="bg-primary rounded-sm overflow-hidden transition-all duration-300 ease-in-out flex flex-col"
       style={{ width: `${modalSize.width}px`, height: `${modalSize.height}px` }}
     >
       <div className="border-b border-gray-700 h-[54px] px-6 flex justify-between items-center">

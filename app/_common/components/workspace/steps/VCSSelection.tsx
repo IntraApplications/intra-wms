@@ -64,7 +64,7 @@ const VCSSelection: React.FC<VCSSelectionProps> = ({
         {vcsOptions.map((option, index) => (
           <div
             key={index}
-            className="bg-[#242427] border border-[#4C4C4C] rounded-[5px] p-4 flex flex-col justify-between"
+            className="bg-dashboard border border-border rounded-[5px] p-4 flex flex-col justify-between"
           >
             <div>
               <div className="flex items-center mb-2">
