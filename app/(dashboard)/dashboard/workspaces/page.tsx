@@ -4,34 +4,31 @@ import { useState, useEffect } from "react";
 import { faPlus } from "@fortawesome/free-solid-svg-icons";
 import { CodeOutlined, ChevronRight, DvrOutlined } from "@mui/icons-material";
 import Button from "@/_common/components/Button";
+import Modal from "@/_common/components/Modal";
+import WorkspaceCreationModal from "@/_common/components/workspace/WorkspaceCreationModal";
 import { useGitHubIntegration } from "@/hooks/useGitHubIntegration";
 import { useWebSocketContext } from "@/contexts/WebSocketContext";
+import { useNotificationContext } from "@/contexts/NotificationContext";
 
 export default function WorkspacePage() {
   const [hasWorkspaces, setHasWorkspaces] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Custom hook for GitHub integration
-  const { isLoading, error, initiateInstall, checkInstallation } =
-    useGitHubIntegration();
+  const { isLoading, checkInstallation } = useGitHubIntegration();
+  const { message } = useWebSocketContext();
+  const { showNotification } = useNotificationContext();
 
-  // WebSocket context for receiving messages and showing notifications
-  const { message, showNotification } = useWebSocketContext();
-
-  // Effect to check for GitHub installation on component mount
   useEffect(() => {
     checkInstallation("PinglMobile");
   }, []);
 
-  // Handle GitHub integration errors and show error notifications
-  useEffect(() => {
-    if (error) {
-      showNotification({
-        type: "error",
-        title: "GitHub Integration Error",
-        message: error,
-      });
-    }
-  }, [error]);
+  const handleCreateWorkspace = () => {
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+  };
 
   return (
     <div className="h-full">
@@ -52,9 +49,9 @@ export default function WorkspacePage() {
               <Button
                 text={"Create new workspace"}
                 type={"button"}
-                size="xs"
-                icon={faPlus}
-                handleClick={initiateInstall}
+                colorType="tertiary"
+                size="small"
+                handleClick={handleCreateWorkspace}
                 loading={isLoading}
               />
             </div>
@@ -72,11 +69,11 @@ export default function WorkspacePage() {
                   to start working efficiently and track progress in real-time.
                 </p>
                 <Button
-                  text={"Install Intra GitHub App"}
+                  text={"Create new workspace"}
                   type={"button"}
-                  size="xxs"
-                  icon={faPlus}
-                  handleClick={initiateInstall}
+                  size="small"
+                  colorType="tertiary"
+                  handleClick={handleCreateWorkspace}
                   loading={isLoading}
                   className="mt-10"
                 />
@@ -85,6 +82,10 @@ export default function WorkspacePage() {
           )}
         </div>
       </div>
+
+      <Modal isOpen={isModalOpen} onClose={handleCloseModal}>
+        <WorkspaceCreationModal onClose={handleCloseModal} />
+      </Modal>
     </div>
   );
 }

@@ -1,13 +1,27 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/_lib/supabase";
 import { githubApp } from "@/_lib/github";
+import { useNotificationContext } from "@/contexts/NotificationContext";
 
 export function useGitHubIntegration() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [installationId, setInstallationId] = useState<string | null>(null);
   const [repos, setRepos] = useState<any[]>([]);
+
+  // Handle GitHub integration errors and show error notifications
+  const { showNotification } = useNotificationContext();
+
+  useEffect(() => {
+    if (error) {
+      showNotification({
+        type: "error",
+        title: "GitHub Integration Error",
+        message: error,
+      });
+    }
+  }, [error]);
 
   // Initiate GitHub App installation process
   const initiateInstall = async () => {
