@@ -59,6 +59,22 @@ html, body, #__next {
   --color-sidenav: #A1A1AA; /* Sidenav text */
   --color-shimmer-peak: #2C2C30;
 }
+
+.theme-dark-blue {
+  --color-primary: #121212; /* Darkest background */
+  --color-secondary: #1E1E24; /* Container background */
+  --color-secondary-border: #2D2D34;
+  --color-tertiary: #3A506B; /* Button and highlights */
+  --color-tertiary-border: #5BC0BE; /* Button and highlights */
+  --color-neutral: #E0E1DD; /* Text */
+  --color-accent: #6FFFE9; /* Accent color for small highlights */
+  --color-border: #2A2A2E; /* Border color */
+  --color-alert: #1B1B1E;
+  --color-dashboard: #16161A;
+  --color-sidenav: #B8B8B8;
+  --color-shimmer-peak: #3D3D3D;
+  
+}
 .theme-light {
   --color-primary: #FFFFFF; /* Lightest background */
   --color-secondary: #F5F5F7; /* Container background */
