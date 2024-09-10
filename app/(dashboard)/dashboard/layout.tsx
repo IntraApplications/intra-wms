@@ -78,7 +78,7 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
                     />
                   );
                 })()}
-                <p className="text-white font-normal text-xs">
+                <p className="text-white font-semibold text-xs">
                   {dropdownItems[selectedDropdownItem].name}
                 </p>
               </div>

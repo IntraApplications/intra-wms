@@ -24,7 +24,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className="h-full theme-main
+      className="h-full theme-main2
      bg-primary"
     >
       <body className={inter.className}>

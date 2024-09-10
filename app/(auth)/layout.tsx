@@ -79,7 +79,7 @@ export default async function AuthLayout({
                 </div>
               </div>
 
-              <Button text={"Log in"} type={"submit"} />
+              <Button text={"Log in"} type={"submit"} colorType="tertiary" />
             </form>
           </div>
         </div>
