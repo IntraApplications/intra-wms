@@ -120,7 +120,7 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
                 <div className="w-7 mr-2 flex justify-center">
                   <item.icon fontSize="small" />
                 </div>
-                <p className="font-normal text-xs">{item.name}</p>
+                <p className="font-semibold text-xs">{item.name}</p>
               </div>
             ))}
           </div>
