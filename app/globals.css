@@ -63,8 +63,8 @@ html, body, #__next {
   --color-primary: #0F0F11; /* Darkest background */
   --color-secondary: #1A1A1D; /* Container background */
   --color-secondary-border: #27272A; /* Subtle border */
-  --color-tertiary: #2A6343; /* Green button and highlights */
-  --color-tertiary-border: #38A169; /* Brighter green for button borders and highlights */
+  --color-tertiary: #3A8D6A; /* Muted green for buttons and highlights */
+  --color-tertiary-border: #4FAC85; /* Lighter, subtle green for borders */
   --color-neutral: #D4D4D8; /* Text, soft off-white for less contrast */
   --color-accent: #71717A; /* Border and light gray */
   --color-border: #27272A; /* Border color */
