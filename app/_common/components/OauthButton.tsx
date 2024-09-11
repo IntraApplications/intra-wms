@@ -1,7 +1,8 @@
+"use client";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { IconDefinition } from "@fortawesome/free-solid-svg-icons";
 import { redirect } from "next/navigation";
-import { createClient } from "@/_lib/supabase/supabase-server";
+import { createClient } from "@/lib/supabase/supabase-server";
 import { handleOAuth } from "@/(auth)/actions";
 
 interface OauthButtonProps {

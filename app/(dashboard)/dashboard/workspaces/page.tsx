@@ -9,7 +9,7 @@ import WorkspaceCreationModal from "@/_common/components/workspace/WorkspaceCrea
 import { useGitHubIntegration } from "@/hooks/useGitHubIntegration";
 import { useWebSocketContext } from "@/contexts/WebSocketContext";
 import { useNotificationContext } from "@/contexts/NotificationContext";
-import { createClient } from "@/_lib/supabase/supabase-client";
+import { createClient } from "@/lib/supabase/supabase-client";
 
 export default function WorkspacePage() {
   const [hasWorkspaces, setHasWorkspaces] = useState(false);

@@ -1,6 +1,6 @@
 "use client";
 import Image from "next/image";
-import sequelize from "./_lib/sequelize";
+import sequelize from "./lib/sequelize";
 
 export default async function Home() {
   try {

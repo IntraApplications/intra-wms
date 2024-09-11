@@ -11,9 +11,11 @@ import { faGithub, faGoogle } from "@fortawesome/free-brands-svg-icons";
 import Input from "@/_common/components/Input";
 import Button from "@/_common/components/Button";
 import OauthButton from "@/_common/components/OauthButton";
-import { supabase } from "@/_lib/supabase";
+import { createClient } from "@/lib/supabase/supabase-client";
 import { usePathname } from "next/navigation";
 import { useWebSocketContext } from "@/contexts/WebSocketContext";
+import { useNotificationContext } from "@/contexts/NotificationContext";
+import { handleLogin, handleSignup } from "./actions";
 
 type LoginInputs = {
   username: string;
@@ -35,7 +37,7 @@ export default function AuthLayout({
 }) {
   const pathname = usePathname();
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const { showNotification } = useWebSocketContext();
+  const { showNotification } = useNotificationContext();
 
   const isLoginPage = pathname === "/login";
   const isSignupPage = pathname === "/signup";
@@ -48,103 +50,54 @@ export default function AuthLayout({
     resolver: zodResolver(loginSchema),
   });
 
-  const loginMutation = useMutation({
-    mutationFn: (credentials: LoginInputs) => {
-      return axios.post("/api/login", credentials);
-    },
-    onError: (error) => {
-      showNotification({
-        type: "error",
-        title: "Login Error",
-        message: "Login failed. Please check your credentials and try again.",
-      });
-    },
-  });
-
   const onSubmit: SubmitHandler<LoginInputs> = async (data: LoginInputs) => {
-    setIsLoading(true);
-    if (isLoginPage) {
-      try {
-        const signupData = await supabase.auth.signInWithPassword({
-          email: data.username,
-          password: data.password,
-        });
-
-        if (signupData.error) {
-          throw new Error(signupData.error.message);
-        }
-      } catch (err) {
-        showNotification({
-          type: "error",
-          title: "Login Error",
-          message: err.message || "Log in failed. Please try again.",
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    } else if (isSignupPage) {
-      try {
-        const signupData = await supabase.auth.signUp({
-          email: data.username,
-          password: data.password,
-          options: {
-            emailRedirectTo: "http://localhost:3000/dashboard",
-          },
-        });
-
-        if (signupData.error) {
-          throw new Error(signupData.error.message);
-        }
-      } catch (err) {
-        showNotification({
-          type: "error",
-          title: "Signup Error",
-          message: err.message || "Sign up failed. Please try again.",
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    } else {
-      setIsLoading(false);
-      showNotification({
-        type: "error",
-        title: "Navigation Error",
-        message: "Invalid login page",
-      });
-    }
-  };
-
-  const onOauthSubmit = async (provider: "google" | "github") => {
     try {
-      let error;
-      if (provider === "google") {
-        ({ error } = await supabase.auth.signInWithOAuth({
-          provider: "google",
-          options: {
-            redirectTo: `http://localhost:3000/dashboard/workspaces`,
-          },
-        }));
-      } else {
-        ({ error } = await supabase.auth.signInWithOAuth({
-          provider: "github",
-          options: {
-            redirectTo: `http://localhost:3000/dashboard/workspaces`,
-          },
-        }));
+      setIsLoading(true);
+
+      // Check if it's a valid page (login/signup)
+      if (!isLoginPage && !isSignupPage) {
+        throw new Error("Invalid navigation. Please try again.");
       }
 
-      if (error) {
-        throw new Error(error.message);
+      // Create FormData to send to the server
+      const formData = new FormData();
+      formData.append("email", data.username);
+      formData.append("password", data.password);
+
+      // Call server-side actions based on the page type
+      let result;
+      if (isLoginPage) {
+        result = await handleLogin(formData);
+      } else if (isSignupPage) {
+        result = await handleSignup(formData);
       }
+
+      // Handle errors from the server response
+      if (result?.success === false) {
+        const errorMessage = result.errors
+          ? JSON.stringify(result.errors)
+          : result.error || "An unknown error occurred";
+        throw new Error(errorMessage);
+      }
+
+      // Show success message
+      showNotification({
+        type: "success",
+        title: isLoginPage ? "Login Successful" : "Signup Successful",
+        message: `Welcome, ${data.username}! Redirecting to your dashboard.`,
+      });
     } catch (err) {
+      // Show error notification
       showNotification({
         type: "error",
-        title: "OAuth Error",
-        message: err.message || "OAuth login failed. Please try again.",
+        title: isLoginPage ? "Login Error" : "Signup Error",
+        message: err instanceof Error ? err.message : "Something went wrong.",
       });
+    } finally {
+      // Ensure loading state is cleared
+      setIsLoading(false);
     }
   };
-
   return (
     <div className="flex h-screen items-center justify-center bg-red flex-1">
       <div className="flex flex-col w-full max-w-sm lg:w-96 items-center justify-center">
@@ -152,29 +105,24 @@ export default function AuthLayout({
 
         <div className="mt-6 w-11/12 sm:w-full">
           <div className="justify-center">
-            <form onSubmit={handleSubmit(onSubmit)} className="justify-center">
-              <div className="grid gap-4">
-                <OauthButton
-                  icon={faGoogle}
-                  text={"Continue with Google"}
-                  type={"button"}
-                  oauthType="google"
-                  handleClick={() => onOauthSubmit("google")}
-                />
-                <OauthButton
-                  icon={faGithub}
-                  text={"Continue with Github"}
-                  type={"button"}
-                  oauthType="github"
-                  handleClick={() => onOauthSubmit("github")}
-                />
-                <div className="flex items-center mt-2 justify-center">
-                  <div className="flex-grow border-t border-secondary"></div>
-                  <span className="px-4 text-sm text-accent">or</span>
-                  <div className="flex-grow border-t border-secondary"></div>
-                </div>
+            <div className="grid gap-4">
+              <OauthButton
+                icon={faGoogle}
+                text={"Continue with Google"}
+                oauthType="google"
+              />
+              <OauthButton
+                icon={faGithub}
+                text={"Continue with Github"}
+                oauthType="github"
+              />
+              <div className="flex items-center mt-2 justify-center">
+                <div className="flex-grow border-t border-secondary"></div>
+                <span className="px-4 text-sm text-accent">or</span>
+                <div className="flex-grow border-t border-secondary"></div>
               </div>
-
+            </div>
+            <form onSubmit={handleSubmit(onSubmit)} className="justify-center">
               <div className="grid mb-8">
                 <Input
                   label="Email Address"

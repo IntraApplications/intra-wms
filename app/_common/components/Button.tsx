@@ -8,7 +8,7 @@ interface ButtonProps {
   type: "submit" | "reset" | "button" | undefined;
   handleClick?: () => void;
   loading?: boolean;
-  size?: "xxs" | "xs" | "small" | "medium" | "large";
+  size?: "xxs" | "xs" | "normal" | "small" | "medium" | "large";
   colorType?: "primary" | "secondary" | "tertiary" | "success" | "danger"; // Added tertiary
 }
 
@@ -18,7 +18,7 @@ export default function Button({
   handleClick,
   icon,
   loading = false,
-  size = "medium",
+  size = "normal",
   colorType = "primary", // Default colorType is "primary"
 }: ButtonProps) {
   // Define size classes
@@ -26,7 +26,8 @@ export default function Button({
     xxs: "px-3 text-[9px]",
     xs: "px-4 text-[10px]",
     small: "px-5 py-0.5 text-xs",
-    medium: "px-5 py-3 text-base",
+    medium: "px-5 py-2 text-base",
+    normal: "px-5 py-3 text-base",
     large: "px-6 py-4 text-lg",
   };
 

@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { supabase } from "@/_lib/supabase/supabase-client";
+import { supabase } from "@/lib/supabase/supabase-client";
 import axios from "axios";
 
 const useVCSToken = () => {

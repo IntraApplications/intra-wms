@@ -1,6 +1,6 @@
 import React from "react";
 import { redirect } from "next/navigation";
-import { createClient } from "@/_lib/supabase/supabase-server";
+import { createClient } from "@/lib/supabase/supabase-server";
 import { faGithub, faGoogle } from "@fortawesome/free-brands-svg-icons";
 import OauthButton from "@/_common/components/OauthButton";
 import Input from "@/_common/components/Input";
