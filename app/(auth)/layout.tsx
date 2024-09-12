@@ -98,6 +98,7 @@ export default function AuthLayout({
       setIsLoading(false);
     }
   };
+
   return (
     <div className="flex h-screen items-center justify-center bg-red flex-1">
       <div className="flex flex-col w-full max-w-sm lg:w-96 items-center justify-center">

@@ -2,21 +2,76 @@
 
 import React, { useState } from "react";
 import Image from "next/image";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { AnimatePresence, motion } from "framer-motion";
 import IntraLogo from "@/_assets/intra-icon-large-transparent.png";
 import Button from "@/_common/components/Button";
 import Input from "@/_common/components/Input";
 import ProgressDots from "@/_common/components/ProgressDots";
-import { AnimatePresence, motion } from "framer-motion";
+import { handleWorkspaceCreation } from "@/(setup)/setup/actions";
+import { useNotificationContext } from "@/contexts/NotificationContext";
 
 const steps = ["welcome", "workspace-name"];
 
+const workspaceNameSchema = z.object({
+  workspaceName: z
+    .string()
+    .min(3, "Workspace name must be at least 3 characters")
+    .max(25, "Workspace name cannot exceed 25 characters"),
+  workspaceURL: z
+    .string()
+    .min(10, "Workspace URL must be at least 10 characters")
+    .max(35, "Workspace URL cannot exceed 35 characters"),
+});
+
+type WorkspaceNameInput = z.infer<typeof workspaceNameSchema>;
+
 export default function SetupProcess() {
   const [currentStep, setCurrentStep] = useState(0);
+  const { showNotification } = useNotificationContext();
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<WorkspaceNameInput>({
+    resolver: zodResolver(workspaceNameSchema),
+  });
 
   const nextStep = () => {
     if (currentStep < steps.length - 1) {
       setCurrentStep(currentStep + 1);
     }
+  };
+
+  const onSubmit = async (data: WorkspaceNameInput) => {
+    const formData = new FormData();
+    formData.append("workspaceName", data.workspaceName);
+    formData.append("workspaceURL", data.workspaceURL);
+
+    const result = await handleWorkspaceCreation(formData);
+    if (result?.success === false) {
+      // Handle errors
+      if (result.errors) {
+        // Handle Zod validation errors
+        const errorMessages = Object.values(result.errors).flat().join(", ");
+        showNotification({
+          type: "error",
+          title: "Validation Error",
+          message: errorMessages,
+        });
+      } else if (result.error) {
+        // Handle other errors
+        showNotification({
+          type: "error",
+          title: "Workspace Creation Failed",
+          message: result.error,
+        });
+      }
+    }
+    // If successful, the action will handle the redirect
   };
 
   const Welcome = () => (
@@ -48,24 +103,22 @@ export default function SetupProcess() {
             Workspaces are shared environments where teams collaborate
             effortlessly on projects and tasks, ensuring smooth workflows
           </p>
-          <form
-            className="w-full"
-            onSubmit={(e) => {
-              e.preventDefault();
-              nextStep();
-            }}
-          >
+          <form className="w-full" onSubmit={handleSubmit(onSubmit)}>
             <Input
               label="Workspace Name"
-              id="workspace-name"
+              id="workspaceName"
               placeholder="Intra Applications"
               type="text"
+              error={errors.workspaceName}
+              {...register("workspaceName")}
             />
             <Input
               label="Workspace URL"
-              id="company-size"
+              id="workspaceURL"
               placeholder="intra.com/"
-              type="select"
+              type="text"
+              error={errors.workspaceURL}
+              {...register("workspaceURL")}
             />
             <div className="mt-12">
               <Button text="Continue" type="submit" colorType="tertiary" />

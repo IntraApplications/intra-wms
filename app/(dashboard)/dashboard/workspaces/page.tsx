@@ -20,11 +20,8 @@ export default function WorkspacePage() {
   useEffect(() => {
     // declare the data fetching function
     const fetchData = async () => {
-      console.log("test");
       const supabase = createClient();
-      console.log(supabase);
       const data = await supabase.auth.getUser();
-      console.log(data);
     };
 
     // call the function

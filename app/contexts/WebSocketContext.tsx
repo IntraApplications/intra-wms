@@ -1,58 +1,107 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import io from "socket.io-client";
-import { useNotificationContext } from "./NotificationContext"; // Import NotificationContext
+import { useNotificationContext } from "./NotificationContext";
+import { createClient } from "@/lib/supabase/supabase-client";
 
-// Define the shape of the context value
 type WebSocketContextValue = {
   message: any;
   ws: WebSocket | null;
 };
 
-// Create WebSocket context
 const WebSocketContext = createContext<WebSocketContextValue | null>(null);
 
 export const WebSocketProvider: React.FC = ({ children }) => {
   const [message, setMessage] = useState<any>(null);
   const [ws, setWs] = useState<WebSocket | null>(null);
 
-  // Access the notification context to trigger notifications globally
   const { showNotification } = useNotificationContext();
 
   useEffect(() => {
-    // Connect to WebSocket server
     const socketConnection = io("http://localhost:3001");
+    const supabase = createClient();
 
-    // Listen for broadcast messages from WebSocket
-    socketConnection.on("github_webhook", (message) => {
-      setMessage(message);
+    socketConnection.on("github_webhook", async (data) => {
+      const { event, action, installationId, githubOrgName, githubOrgId } =
+        data;
 
-      // Automatically trigger notifications based on WebSocket events
-      if (message?.event === "installation" && message?.action === "created") {
-        showNotification({
-          type: "success",
-          title: "GitHub Connected",
-          message: "A new GitHub installation was added.",
-        });
-      } else if (
-        message?.event === "installation" &&
-        message?.action === "deleted"
-      ) {
-        showNotification({
-          type: "warning",
-          title: "GitHub Disconnected",
-          message: "A GitHub installation was removed.",
-        });
+      if (event === "installation" && action === "created") {
+        try {
+          // Update the existing workspace with GitHub details
+          const { error } = await supabase
+            .from("workspaces")
+            .update({
+              github_app_installation_id: installationId,
+              github_org_name: githubOrgName,
+              github_org_id: githubOrgId,
+            })
+            .eq("github_app_installation_id", installationId);
+
+          if (error) {
+            console.error("Error updating workspace:", error);
+            throw error;
+          }
+
+          showNotification({
+            type: "success",
+            title: "GitHub Connected",
+            message: "GitHub installation was added and workspace updated.",
+          });
+        } catch (err) {
+          console.error(
+            "Failed to update workspace after installation creation:",
+            err
+          );
+          showNotification({
+            type: "error",
+            title: "Workspace Update Failed",
+            message: "Failed to update workspace with GitHub details.",
+          });
+        }
+      } else if (event === "installation" && action === "deleted") {
+        try {
+          // Update the database to reflect the deleted installation
+          const { error } = await supabase
+            .from("workspaces")
+            .update({
+              github_app_installation_id: null,
+              github_org_name: null,
+              github_org_id: null,
+            })
+            .eq("github_app_installation_id", installationId);
+
+          if (error) {
+            console.error("Error updating database:", error);
+            throw error;
+          }
+
+          showNotification({
+            type: "warning",
+            title: "GitHub Disconnected",
+            message: "GitHub installation was removed and database updated.",
+          });
+        } catch (err) {
+          console.error(
+            "Failed to update database after installation deletion:",
+            err
+          );
+          showNotification({
+            type: "error",
+            title: "Update Failed",
+            message: "Failed to update database after GitHub disconnection.",
+          });
+        }
       }
+      await setTimeout(() => {
+        setMessage(data);
+      }, 2000);
     });
 
-    // Handle disconnect
     socketConnection.on("disconnect", () => {
       console.log("Disconnected from WebSocket server");
     });
 
     setWs(socketConnection);
 
-    // Cleanup on unmount
     return () => {
       socketConnection.disconnect();
     };
@@ -65,7 +114,6 @@ export const WebSocketProvider: React.FC = ({ children }) => {
   );
 };
 
-// Custom hook to use the WebSocket context
 export const useWebSocketContext = () => {
   const context = useContext(WebSocketContext);
   if (context === null) {

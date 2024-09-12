@@ -15,6 +15,8 @@ import {
 } from "@mui/icons-material";
 import Image from "next/image";
 import IntraLogo from "@/_assets/intra-icon-large-transparent.png";
+import { createClient } from "@/lib/supabase/supabase-client";
+import { redirect } from "next/navigation";
 
 const navItems = [
   { name: "Home", icon: HomeOutlined },

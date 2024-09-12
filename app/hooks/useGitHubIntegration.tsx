@@ -5,14 +5,14 @@ import { createClient } from "@/lib/supabase/supabase-client";
 import { githubApp } from "@/lib/github";
 import { useNotificationContext } from "@/contexts/NotificationContext";
 import { RequestError } from "octokit";
-import { create } from "domain";
+import { useUser, useWorkspace } from "./useData";
+import { useWebSocketContext } from "@/contexts/WebSocketContext";
+import { Workspaces } from "@mui/icons-material";
 
 interface GitHubIntegrationState {
   isLoading: boolean;
   error: string | null;
   isConnected: boolean;
-  orgName: string | null;
-  githubOrgName: string | null;
 }
 
 export function useGitHubIntegration() {
@@ -20,15 +20,18 @@ export function useGitHubIntegration() {
     isLoading: true,
     error: null,
     isConnected: false,
-    orgName: null,
-    githubOrgName: null,
   });
 
   const { showNotification } = useNotificationContext();
+  const { user, isLoading: userLoading } = useUser();
+  const { workspace, isLoading: workspaceLoading } = useWorkspace();
+  const { message } = useWebSocketContext();
 
   useEffect(() => {
-    checkInstallation();
-  }, []);
+    if (!userLoading && !workspaceLoading) {
+      checkInstallation();
+    }
+  }, [user, workspace, userLoading, workspaceLoading, message]);
 
   useEffect(() => {
     if (state.error) {
@@ -42,98 +45,89 @@ export function useGitHubIntegration() {
 
   const checkInstallation = async () => {
     setState((prev) => ({ ...prev, isLoading: true, error: null }));
+    const supabase = createClient();
 
     try {
-      const supabase = createClient();
-      const { data, error: fetchError } = await supabase
-        .from("organizations")
-        .select("name, github_org_name, github_app_installation_id")
-        .eq("name", "pingl") // Use dynamic organization name
+      const { data: workspace } = await supabase
+        .from("workspaces")
+        .select(
+          "id, github_app_installation_id, github_org_name, github_org_id"
+        )
         .single();
 
-      if (fetchError || !data) {
+      if (!workspace?.github_app_installation_id) {
         setState((prev) => ({
           ...prev,
           isLoading: false,
           isConnected: false,
-          error: "No connected organizations found.",
         }));
         return;
       }
 
-      const {
-        name: orgName,
-        github_org_name: githubOrgName,
-        github_app_installation_id: installationId,
-      } = data;
-
-      if (!installationId) {
-        // "No GitHub installation found for this organization.",
-        setState((prev) => ({
-          ...prev,
-          isLoading: false,
-          isConnected: false,
-          orgName,
-          githubOrgName,
-        }));
-        return;
-      }
-
-      // Step 2: Verify if the installation is valid using GitHub's API
       const octokit = await githubApp.getInstallationOctokit(
-        Number(installationId)
+        Number(workspace.github_app_installation_id)
       );
 
-      const { data: installationData } =
+      try {
         await octokit.rest.apps.getInstallation({
-          installation_id: Number(installationId),
+          installation_id: Number(workspace.github_app_installation_id),
         });
-
-      console.log(installationData);
-
-      if (!installationData) {
-        //  "GitHub app is no longer integrated or has no accessible repositories.",
         setState((prev) => ({
           ...prev,
           isLoading: false,
-          isConnected: false,
-          orgName,
-          githubOrgName,
+          isConnected: true,
+          githubOrgName: workspace.github_org_name,
         }));
-        return;
-      }
+      } catch (err) {
+        // this error is thrown if the installation id does not exist anymore
+        // meaning the installation deleted, rather than checking for a deleted event
+        if (err instanceof RequestError && err.status === 404) {
+          // Installation not found, clear the data
 
-      // Step 3: Store fetched repositories and update state
-      setState((prev) => ({
-        ...prev,
-        isLoading: false,
-        isConnected: true,
-        orgName,
-        githubOrgName,
-      }));
+          await supabase
+            .from("workspaces")
+            .update({
+              github_app_installation_id: null,
+              github_org_name: null,
+              github_org_id: null,
+            })
+            .eq("id", workspace.id);
+
+          setState((prev) => ({
+            ...prev,
+            isLoading: false,
+            isConnected: false,
+            githubOrgName: null,
+          }));
+
+          showNotification({
+            type: "warning",
+            title: "GitHub Disconnected",
+            message: "GitHub installation was removed. Please reconnect.",
+          });
+        } else {
+          setState((prev) => ({
+            ...prev,
+            isLoading: false,
+            isConnected: false,
+            error: "An error occurred while checking GitHub integration.",
+          }));
+        }
+        console.error("Error checking installation:", err);
+      }
     } catch (err) {
-      // RequestError - octokit
-      if (err.status === 404) {
-        // installation has not been found
-        setState((prev) => ({
-          ...prev,
-          isLoading: false,
-          isConnected: false,
-        }));
-        return;
-      }
       setState((prev) => ({
         ...prev,
         isLoading: false,
         isConnected: false,
-        error: "Github ",
+        error: "An error occurred while checking GitHub integration.",
       }));
       console.error("Error checking installation:", err);
     }
   };
 
   const initiateInstall = async () => {
-    setState((prev) => ({ ...prev, error: null }));
+    setState((prev) => ({ ...prev, isLoading: true, error: null }));
 
     try {
       const response = await fetch("/api/github-app-install");
@@ -152,6 +146,8 @@ export function useGitHubIntegration() {
 
   return {
     ...state,
+    orgName: workspace?.name ?? null,
+    githubOrgName: workspace?.github_org_name ?? null,
     initiateInstall,
     checkInstallation,
   };

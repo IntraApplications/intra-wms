@@ -10,11 +10,6 @@ import Button from "@/_common/components/Button";
 import { useGitHubIntegration } from "@/hooks/useGitHubIntegration";
 import { useWebSocketContext } from "@/contexts/WebSocketContext";
 
-interface VCSSelectionProps {
-  workspaceData: any;
-  updateWorkspaceData: (data: any) => void;
-}
-
 const vcsOptions = [
   {
     name: "GitHub",
@@ -62,10 +57,7 @@ const VCSOptionSkeleton = () => (
   </div>
 );
 
-const VCSSelection: React.FC<VCSSelectionProps> = ({
-  workspaceData,
-  updateWorkspaceData,
-}) => {
+const VCSSelection: React.FC = ({}) => {
   const {
     isLoading,
     error,
@@ -79,16 +71,62 @@ const VCSSelection: React.FC<VCSSelectionProps> = ({
   const { message } = useWebSocketContext();
 
   const handleSelect = (vcsName: string) => {
-    initiateInstall();
-    updateWorkspaceData({ vcs: vcsName });
-  };
-  useEffect(() => {
-    // THIS MIGHT CAUSE RE REDERING ERRORS IN THE FUTURE
-    if (message?.event === "installation" && message?.action === "deleted") {
-      // if the installation has been deleted from te orginization we recheck the connection
-      checkInstallation();
+    if (vcsName === "GitHub") {
+      if (isConnected) {
+        //updateWorkspaceData({ vcs: vcsName });
+      } else {
+        initiateInstall();
+      }
+    } else if (vcsName === "Blank Workspace") {
+      // updateWorkspaceData({ vcs: vcsName });
+    } else {
+      alert(`${vcsName} integration is coming soon!`);
     }
-  }, [message]);
+  };
+
+  const getButtonProps = (option) => {
+    if (option.name === "GitHub") {
+      return {
+        text: isConnected ? "Continue" : "Connect",
+        colorType: isConnected ? "tertiary" : "secondary",
+      };
+    } else if (option.name === "Blank Workspace") {
+      return {
+        text: "Create",
+        colorType: "tertiary",
+      };
+    } else {
+      return {
+        text: "Connect",
+        colorType: "secondary",
+      };
+    }
+  };
+
+  const getStatusText = (option) => {
+    if (option.name === "GitHub" && isConnected) {
+      return (
+        <span className="flex items-center text-xs">
+          <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+          <span className="text-accent">{githubOrgName}</span>
+        </span>
+      );
+    } else if (option.name === "Blank Workspace") {
+      return (
+        <span className="flex items-center text-xs">
+          <span className="w-2 h-2 bg-accent rounded-full mr-2"></span>
+          <span className="text-accent">Create From Scratch</span>
+        </span>
+      );
+    } else {
+      return (
+        <span className="flex items-center text-xs">
+          <span className="w-2 h-2 bg-red-500 rounded-full mr-2"></span>
+          <span className="text-red-500">Not Connected</span>
+        </span>
+      );
+    }
+  };
 
   return (
     <div className="p-6 max-w-[1320px] mx-auto">
@@ -109,8 +147,6 @@ const VCSSelection: React.FC<VCSSelectionProps> = ({
             <VCSOptionSkeleton key={index} />
           ))}
         </div>
-      ) : error ? (
-        <p className="text-red-500">{error}</p>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {vcsOptions.map((option, index) => (
@@ -132,22 +168,11 @@ const VCSSelection: React.FC<VCSSelectionProps> = ({
                 <p className="text-gray-400 text-xs">{option.description}</p>
               </div>
               <div className="flex justify-between items-center mt-4">
-                {isConnected ? (
-                  <span className="flex items-center text-xs">
-                    <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
-                    <span className="text-accent">{githubOrgName}</span>
-                  </span>
-                ) : (
-                  <span className="flex items-center text-xs">
-                    <span className="w-2 h-2 bg-red-500 rounded-full mr-2"></span>
-                    <span className="text-red-500">Not Connected</span>
-                  </span>
-                )}
+                {getStatusText(option)}
                 <Button
-                  text="Select"
+                  {...getButtonProps(option)}
                   size="xs"
                   type="button"
-                  colorType="secondary"
                   handleClick={() => handleSelect(option.name)}
                 />
               </div>
