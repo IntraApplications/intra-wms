@@ -1,6 +1,6 @@
 // hooks/useIntraData.ts
 
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/supabase-client";
 import { useNotificationContext } from "@/contexts/NotificationContext";
 
@@ -17,122 +17,73 @@ interface Workspace {
   // Add other workspace properties as needed
 }
 
-interface UserState {
-  isLoading: boolean;
-  error: string | null;
-  user: User | null;
-}
-
-interface WorkspaceState {
-  isLoading: boolean;
-  error: string | null;
-  workspace: Workspace | null;
-}
+const supabase = createClient();
 
 export function useUser() {
-  const [state, setState] = useState<UserState>({
-    isLoading: true,
-    error: null,
-    user: null,
-  });
-
   const { showNotification } = useNotificationContext();
 
-  useEffect(() => {
-    fetchUser();
-  }, []);
-
-  useEffect(() => {
-    if (state.error) {
-      showNotification({
-        type: "error",
-        title: "User Data Error",
-        message: state.error,
-      });
-    }
-  }, [state.error]);
-
-  const fetchUser = async () => {
-    setState((prev) => ({ ...prev, isLoading: true, error: null }));
-
-    try {
-      const supabase = createClient();
+  return useQuery({
+    queryKey: ["user"],
+    queryFn: async () => {
       const {
         data: { user },
         error,
       } = await supabase.auth.getUser();
-
       if (error) throw error;
-
-      setState((prev) => ({ ...prev, isLoading: false, user }));
-    } catch (err) {
-      setState((prev) => ({
-        ...prev,
-        isLoading: false,
-        error: "Failed to fetch user data.",
-      }));
-      console.error("Error fetching user:", err);
-    }
-  };
-
-  return {
-    ...state,
-    refetchUser: fetchUser,
-  };
+      return user as User;
+    },
+    onError: (error) => {
+      showNotification({
+        type: "error",
+        title: "User Data Error",
+        message: error.message,
+      });
+    },
+    staleTime: 0,
+    gcTime: 0, // 5 minutes
+  });
 }
 
 export function useWorkspace() {
-  const [state, setState] = useState<WorkspaceState>({
-    isLoading: true,
-    error: null,
-    workspace: null,
-  });
-
   const { showNotification } = useNotificationContext();
-  const { user } = useUser();
+  const { data: user } = useUser();
 
-  useEffect(() => {
-    if (user) {
-      fetchWorkspace(user.id);
-    }
-  }, [user]);
-
-  useEffect(() => {
-    if (state.error) {
-      showNotification({
-        type: "error",
-        title: "Workspace Data Error",
-        message: state.error,
-      });
-    }
-  }, [state.error]);
-
-  const fetchWorkspace = async (userId: string) => {
-    setState((prev) => ({ ...prev, isLoading: true, error: null }));
-
-    try {
-      const supabase = createClient();
+  return useQuery({
+    queryKey: ["workspace"],
+    queryFn: async () => {
+      if (!user) throw new Error("User not found");
       const { data, error } = await supabase
         .from("workspaces")
         .select("*")
-        .eq("user_id", userId)
+        .eq("user_id", user.id)
         .single();
-
       if (error) throw error;
+      return data as Workspace;
+    },
+    enabled: !!user,
+    onError: (error) => {
+      showNotification({
+        type: "error",
+        title: "Workspace Data Error",
+        message: error.message,
+      });
+    },
+    staleTime: 0,
+    gcTime: 0, // 5 minutes
+  });
+}
 
-      setState((prev) => ({ ...prev, isLoading: false, workspace: data }));
-    } catch (err) {
-      setState((prev) => ({
-        ...prev,
-        isLoading: false,
-        error: "Failed to fetch workspace data.",
-      }));
-      console.error("Error fetching workspace:", err);
-    }
-  };
+export function useIntraData() {
+  const userQuery = useUser();
+  const workspaceQuery = useWorkspace();
 
   return {
-    ...state,
-    refetchWorkspace: () => user && fetchWorkspace(user.id),
+    user: userQuery.data,
+    workspace: workspaceQuery.data,
+    isLoading: userQuery.isLoading || workspaceQuery.isLoading,
+    isPending: userQuery.isPending || workspaceQuery.isPending,
+    error: userQuery.error || workspaceQuery.error,
+    refetchUser: userQuery.refetch,
+    refetchWorkspace: workspaceQuery.refetch,
   };
 }

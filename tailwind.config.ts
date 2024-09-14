@@ -6,6 +6,7 @@ const config: Config = {
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
   ],
+
   theme: {
     extend: {
       colors: {
@@ -21,8 +22,6 @@ const config: Config = {
         /* used to compliment borders that use a primary background */
         accent: "var(--color-accent)",
 
-        /* border also */
-        "shimmer-peak": "var(--color-shimmer-peak)",
         border: "var(--color-border)",
         alert: "var(--color-alert)",
         dashboard: "var(--color-dashboard)",
@@ -31,6 +30,8 @@ const config: Config = {
         info: "var(--color-info)",
         warning: "var(--color-warning)",
         error: "var(--color-error)",
+        skeleton: "var(--color-skeleton)",
+        "shimmer-peak": -"var(-color-shimmer-peak)",
       },
     },
   },

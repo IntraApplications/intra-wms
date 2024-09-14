@@ -42,7 +42,9 @@ html, body, #__next {
   --color-alert: #212121;
   --color-dashboard: #1B1B1C;
   --color-sidenav: #A3A3A3;
+  --color-skeleton: #2A2A2A;
   --color-shimmer-peak: #4a4a4a;
+
 }
 .theme-main2 {
   --color-primary: #141416; /* Darkest background */
@@ -56,7 +58,24 @@ html, body, #__next {
   --color-alert: #1E1E1E; /* Darker alert background */
   --color-dashboard: #1A1A1B; /* Consistent dark dashboard background */
   --color-sidenav: #8A8A8A; /* Slightly brighter sidebar text */
-  --color-shimmer-peak: #505050; /* More balanced shimmer effect */
+  --color-skeleton: #2E2D31;
+  --color-shimmer-peak: #505050;
+}
+
+.theme-modern {
+  --color-primary: #1E1E2F;          /* Dark background */
+  --color-secondary: #2D2D44;        /* Container background */
+  --color-secondary-border: #3B3B5A; /* Subtle border for containers */
+  --color-tertiary: #4C8BF5;         /* Blue accent for buttons and highlights */
+  --color-tertiary-border: #6FA3FF;  /* Lighter blue for button borders */
+  --color-neutral: #E5E5E5;          /* Light gray for primary text */
+  --color-accent: #9AA0A6;           /* Muted gray for secondary text */
+  --color-border: #3B3B5A;           /* Consistent border color */
+  --color-alert: #27273E;            /* Alert background */
+  --color-dashboard: #1F1F30;        /* Dashboard background */
+  --color-sidenav: #9AA0A6;          /* Sidebar text color */
+  --color-skeleton: #2D2D44;         /* Skeleton loader background */
+  --color-shimmer-peak: #4A4A6A;     /* Shimmer effect color */
 }
 
 .theme-dark {
@@ -71,7 +90,8 @@ html, body, #__next {
   --color-alert: #18181B; /* Alert color */
   --color-dashboard: #141417; /* Dashboard background */
   --color-sidenav: #A1A1AA; /* Sidenav text */
-  --color-shimmer-peak: #2C2C30;
+  --color-skeleton: #27272A;
+  --color-shimmer-peak: #3F3F46;
 }
 
 .theme-dark-blue {
@@ -86,7 +106,8 @@ html, body, #__next {
   --color-alert: #1B1B1E;
   --color-dashboard: #16161A;
   --color-sidenav: #B8B8B8;
-  --color-shimmer-peak: #3D3D3D;
+  --color-skeleton: #2A2A2E;
+  --color-shimmer-peak: #3B3B44;
   
 }
 .theme-light {
@@ -101,7 +122,8 @@ html, body, #__next {
   --color-alert: #FEF3C7; /* Light yellow for alerts */
   --color-dashboard: #F9F9FB; /* Dashboard background */
   --color-sidenav: #4A4A4F; /* Sidenav text */
-  --color-shimmer-peak: #E8E8E8; /* Shimmer effect peak color */
+  --color-skeleton: #E0E0E2;
+  --color-shimmer-peak: #F0F0F2;
 }
 
 
@@ -209,27 +231,117 @@ html, body, #__next {
   transform: scale(0.9);
 }
 
-@keyframes shimmer {
+
+
+
+.animate-checkmark {
+  animation: checkmark 0.5s ease-in-out;
+}
+
+@keyframes checkmark {
   0% {
-    background-position: -1000px 0;
+    transform: scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 1;
   }
   100% {
-    background-position: 1000px 0;
+    transform: scale(1);
   }
 }
 
 
+/* WorkspaceCreationModal.css */
 
+/* Common styles for slides */
+.workspace-modal {
+  position: relative;
+}
+
+.slide-right-enter,
+.slide-right-exit,
+.slide-left-enter,
+.slide-left-exit {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+}
+
+/* Slide Right Animation (for "Continue") */
+.slide-right-enter {
+  transform: translateX(-100%);
+  opacity: 0;
+}
+
+.slide-right-enter-active {
+  transform: translateX(0%);
+  opacity: 1;
+  transition: transform 300ms ease-in-out, opacity 300ms ease-in-out;
+}
+
+.slide-right-exit {
+  transform: translateX(0%);
+  opacity: 1;
+}
+
+.slide-right-exit-active {
+  transform: translateX(100%);
+  opacity: 0;
+  transition: transform 300ms ease-in-out, opacity 300ms ease-in-out;
+}
+
+/* Slide Left Animation (for "Back") */
+.slide-left-enter {
+  transform: translateX(100%);
+  opacity: 0;
+}
+
+.slide-left-enter-active {
+  transform: translateX(0%);
+  opacity: 1;
+  transition: transform 300ms ease-in-out, opacity 300ms ease-in-out;
+}
+
+.slide-left-exit {
+  transform: translateX(0%);
+  opacity: 1;
+}
+
+.slide-left-exit-active {
+  transform: translateX(-100%);
+  opacity: 0;
+  transition: transform 300ms ease-in-out, opacity 300ms ease-in-out;
+}
+
+
+/* styles/globals.css */
+
+.bg-skeleton {
+  background-color: var(--color-skeleton);
+}
+
+.bg-shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--color-shimmer-peak),
+    transparent
+  );
+}
 
 .animate-shimmer {
-  animation: shimmer 2.5s infinite linear;
-  background: linear-gradient(
-    to right,
-    var(--color-dashboard) 0%,
-    var(--color-secondary) 20%,
-    var(--color-shimmer-peak) 40%,  /* Lighter peak color */
-    var(--color-secondary) 60%,
-    var(--color-dashboard) 80%
-  );
-  background-size: 1000px 100%;
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
 }

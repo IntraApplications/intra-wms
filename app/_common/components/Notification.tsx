@@ -59,7 +59,7 @@ export default function Notification({
 
   return isVisible ? (
     <div
-      className={`fixed bottom-4 right-4 w-96 bg-[#212121] rounded-md shadow-lg overflow-hidden
+      className={`fixed z-50 bottom-4 right-4 w-96 bg-[#212121] rounded-md shadow-lg overflow-hidden
       ${isVisible ? "animate-slideIn" : "animate-slideOut"}`}
     >
       {/* Vertical bar on the left side */}

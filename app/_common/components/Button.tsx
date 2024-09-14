@@ -1,3 +1,4 @@
+import React from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { IconDefinition } from "@fortawesome/free-solid-svg-icons";
 
@@ -8,8 +9,9 @@ interface ButtonProps {
   type: "submit" | "reset" | "button" | undefined;
   handleClick?: () => void;
   loading?: boolean;
+  disabled?: boolean; // New prop for disabled state
   size?: "xxs" | "xs" | "normal" | "small" | "medium" | "large";
-  colorType?: "primary" | "secondary" | "tertiary" | "success" | "danger"; // Added tertiary
+  colorType?: "primary" | "secondary" | "tertiary" | "success" | "danger";
 }
 
 export default function Button({
@@ -18,8 +20,9 @@ export default function Button({
   handleClick,
   icon,
   loading = false,
+  disabled = false, // Default value for disabled
   size = "normal",
-  colorType = "primary", // Default colorType is "primary"
+  colorType = "primary",
 }: ButtonProps) {
   // Define size classes
   const sizeClasses = {
@@ -38,9 +41,12 @@ export default function Button({
       "bg-secondary text-neutral border-secondaryBorder hover:brightness-125",
     tertiary:
       "bg-tertiary text-neutral border-tertiaryBorder hover:brightness-125",
-    success: "bg-green-500 text-white border-green-500 hover:brightness-125", // Example success color
-    danger: "bg-red-500 text-white border-red-500 hover:brightness-125", // Example danger color
+    success: "bg-green-500 text-white border-green-500 hover:brightness-125",
+    danger: "bg-red-500 text-white border-red-500 hover:brightness-125",
   };
+
+  // Define disabled class
+  const disabledClass = "opacity-50 cursor-not-allowed";
 
   return (
     <div>
@@ -48,8 +54,11 @@ export default function Button({
         onClick={handleClick}
         type={type}
         className={`w-full relative flex items-center justify-center whitespace-nowrap rounded border 
-         ${colorClasses[colorType]} ${sizeClasses[size]} leading-6 shadow-sm transition duration-300 ease-in-out`}
-        disabled={loading}
+         ${colorClasses[colorType]} ${
+          sizeClasses[size]
+        } leading-6 shadow-sm transition duration-300 ease-in-out
+         ${disabled || loading ? disabledClass : ""}`}
+        disabled={disabled || loading}
       >
         <span className="flex items-center font-medium justify-center">
           {loading ? (

@@ -40,15 +40,6 @@ const EnvironmentSetup: React.FC<EnvironmentSetupProps> = ({
   const { analyzeRepository } = useClaudeAnalysis();
   const { showNotification } = useNotificationContext();
 
-  const [stepDurations, setStepDurations] = useState<{ [key: string]: number }>(
-    {}
-  );
-  const [stepTimers, setStepTimers] = useState<{
-    [key: string]: NodeJS.Timeout;
-  }>({});
-  const [overallStartTime, setOverallStartTime] = useState<number | null>(null);
-  const [overallElapsedTime, setOverallElapsedTime] = useState<number>(0);
-
   const hasStartedProcess = useRef(false);
 
   useEffect(() => {
@@ -58,40 +49,27 @@ const EnvironmentSetup: React.FC<EnvironmentSetupProps> = ({
     }
   }, [workspaceData.repository]);
 
-  useEffect(() => {
-    let overallTimer: NodeJS.Timeout | null = null;
-    if (overallStartTime !== null) {
-      overallTimer = setInterval(() => {
-        setOverallElapsedTime((Date.now() - overallStartTime) / 1000);
-      }, 1000);
-    }
-    return () => {
-      if (overallTimer) {
-        clearInterval(overallTimer);
-      }
-    };
-  }, [overallStartTime]);
-
   const startProcess = async () => {
     setCurrentStep(0);
     setCompletedSteps([]);
     setFailedStep(null);
     setAnalysisResult(null);
-    setStepDurations({});
-    setOverallElapsedTime(0);
-    setOverallStartTime(Date.now());
 
     try {
       // Step 1: Clone the repository
-      await executeStep(steps[0], cloneRepository);
+      setCurrentStep(0);
+      await cloneRepository();
+      setCompletedSteps((prev) => [...prev, steps[0].key]);
 
       // Step 2: Process the repository
-      const processData = await executeStep(steps[1], processRepository);
+      setCurrentStep(1);
+      const processData = await processRepository();
+      setCompletedSteps((prev) => [...prev, steps[1].key]);
 
       // Step 3: Analyze the repository
-      await executeStep(steps[2], () =>
-        analyzeRepo(processData.repoDir, processData.outputFilePath)
-      );
+      setCurrentStep(2);
+      await analyzeRepo(processData.repoDir, processData.outputFilePath);
+      setCompletedSteps((prev) => [...prev, steps[2].key]);
 
       showNotification({
         type: "success",
@@ -107,46 +85,7 @@ const EnvironmentSetup: React.FC<EnvironmentSetupProps> = ({
     }
   };
 
-  const executeStep = async (
-    step: { name: string; key: string },
-    stepFunction: () => Promise<any>
-  ) => {
-    setCurrentStep(steps.findIndex((s) => s.key === step.key));
-
-    // Initialize step duration and start timer
-    setStepDurations((prev) => ({ ...prev, [step.key]: 0 }));
-    const stepStartTime = Date.now();
-
-    const timer = setInterval(() => {
-      setStepDurations((prev) => ({
-        ...prev,
-        [step.key]: (Date.now() - stepStartTime) / 1000,
-      }));
-    }, 1000);
-
-    setStepTimers((prev) => ({ ...prev, [step.key]: timer }));
-
-    try {
-      const result = await stepFunction();
-      setCompletedSteps((prev) => [...prev, step.key]);
-
-      // Clear timer and record final duration
-      clearInterval(timer);
-      setStepDurations((prev) => ({
-        ...prev,
-        [step.key]: (Date.now() - stepStartTime) / 1000,
-      }));
-      return result;
-    } catch (error) {
-      // Clear timer and record final duration
-      clearInterval(timer);
-      setStepDurations((prev) => ({
-        ...prev,
-        [step.key]: (Date.now() - stepStartTime) / 1000,
-      }));
-      throw error;
-    }
-  };
+  const iconSizeClass = "text-xl"; // Adjusted icon size for consistency
 
   const cloneRepository = async () => {
     try {
@@ -244,13 +183,11 @@ const EnvironmentSetup: React.FC<EnvironmentSetupProps> = ({
     } else {
       return (
         <div
-          className={`${iconSizeClass} h-5 w-5 border border-gray-500 rounded-full`}
+          className={`${iconSizeClass} h-6 w-6 border border-gray-500 rounded-full`}
         />
       );
     }
   };
-
-  const iconSizeClass = "text-xl"; // Adjusted icon size for consistency
 
   return (
     <div className="p-6 max-w-[1320px] mx-auto">
@@ -262,25 +199,13 @@ const EnvironmentSetup: React.FC<EnvironmentSetupProps> = ({
           Setting up your workspace environment. Please wait while we complete
           the steps below.
         </p>
-        {overallStartTime !== null && (
-          <p className="text-gray-400 text-sm mt-2">
-            Total Elapsed Time: {overallElapsedTime.toFixed(0)} seconds
-          </p>
-        )}
       </div>
 
       <div className="mb-6">
         {steps.map((step, index) => (
           <div key={step.key} className="flex items-center mb-4">
             {renderStepIcon(step.key, index)}
-            <div className="ml-4 flex flex-col">
-              <span className="text-white text-sm">{step.name}</span>
-              {stepDurations[step.key] !== undefined && (
-                <span className="text-gray-400 text-xs">
-                  Duration: {stepDurations[step.key].toFixed(0)} seconds
-                </span>
-              )}
-            </div>
+            <span className="ml-4 text-white text-sm">{step.name}</span>
           </div>
         ))}
       </div>
@@ -305,19 +230,9 @@ const EnvironmentSetup: React.FC<EnvironmentSetupProps> = ({
               {analysisResult.projectType}
             </p>
             <p>
-              <strong className="text-white">Language Version:</strong>{" "}
-              {analysisResult.languageVersion}
-            </p>
-            <p>
               <strong className="text-white">Dependencies:</strong>{" "}
               {analysisResult.dependencies.join(", ")}
             </p>
-            {analysisResult.environmentVariables && (
-              <p>
-                <strong className="text-white">Environment Variables:</strong>{" "}
-                {analysisResult.environmentVariables.join(", ")}
-              </p>
-            )}
             {analysisResult.notes && (
               <p>
                 <strong className="text-white">Notes:</strong>{" "}
@@ -333,13 +248,23 @@ const EnvironmentSetup: React.FC<EnvironmentSetupProps> = ({
               {analysisResult.dockerfile}
             </pre>
           </div>
-          {overallElapsedTime > 0 && (
-            <p className="text-gray-400 text-sm mt-4">
-              Total Setup Time: {overallElapsedTime.toFixed(0)} seconds
-            </p>
-          )}
         </div>
       )}
+
+      <Button
+        text={
+          analysisResult
+            ? "Re-run Environment Setup"
+            : "Start Environment Setup"
+        }
+        type="button"
+        colorType="tertiary"
+        size="small"
+        handleClick={() => {
+          hasStartedProcess.current = true;
+          startProcess();
+        }}
+      />
     </div>
   );
 };
