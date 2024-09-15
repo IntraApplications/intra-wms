@@ -3,9 +3,12 @@ import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@/lib/supabase/supabase-server";
-import { githubApp } from "@/lib/github";
-import { prompt } from "./prompt";
 import fs from "fs";
+import { prompt } from "./prompt";
+
+import { promisify } from "util";
+
+const readFile = promisify(fs.readFile);
 
 const anthropic = new Anthropic({
   apiKey: process.env.NEXT_PUBLIC_CLAUDE_API_KEY,
@@ -15,8 +18,17 @@ const openai = new OpenAI({
   apiKey: process.env.NEXT_PUBLIC_OPENAI_API_KEY,
 });
 
+// Function to remove comments from JSON-like string
+const removeComments = (jsonString: string) => {
+  // Remove single-line (//) and multi-line (/* */) comments
+  return jsonString
+    .replace(/\/\/.*$/gm, "")
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .trim();
+};
+
 export async function POST(request: NextRequest) {
-  const { outputFilePath, repoDir } = await request.json(); // Receive the file path and repo directory
+  const { outputFilePath } = await request.json();
 
   const supabase = createClient();
 
@@ -29,45 +41,36 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Fetch the installation ID for the current user's organization
-    const { data: workspaceData, error: workspaceError } = await supabase
-      .from("workspaces")
-      .select("github_app_installation_id")
-      .single();
+    const fileContents = await readFile(outputFilePath, "utf-8");
 
-    if (workspaceError || !workspaceData?.github_app_installation_id) {
-      return NextResponse.json(
-        { error: "No GitHub installation found" },
-        { status: 400 }
-      );
-    }
-
-    // Get an Octokit instance for this installation
-
-    // Fetch repository data using Octokit
-
-    // const prompt = `${repopackOutput}`;
-    /*
-    const message = await anthropic.messages.create({
+    const msg = await anthropic.messages.create({
       model: "claude-3-5-sonnet-20240620",
-      max_tokens: 1000,
+      max_tokens: 8192,
+      temperature: 0,
+      system: prompt,
       messages: [
         {
           role: "user",
-          content: prompt,
+          content: [
+            {
+              type: "text",
+              text: `Analyze the following codebase information:\n\n${fileContents}`,
+            },
+          ],
         },
       ],
     });
-    */
+
+    /*
     const assistant = await openai.beta.assistants.create({
       name: "Code analyzer",
       instructions: prompt,
-
       model: "gpt-4o",
-      tools: [{ type: "file_search" }],
+      temperature: 0.2,
+      top_p: 0.95,
     });
 
-    const aapl10k = await openai.files.create({
+    const fileUpload = await openai.files.create({
       file: fs.createReadStream(outputFilePath),
       purpose: "assistants",
     });
@@ -78,9 +81,8 @@ export async function POST(request: NextRequest) {
           role: "user",
           content: prompt,
           attachments: [
-            { file_id: aapl10k.id, tools: [{ type: "file_search" }] },
+            { file_id: fileUpload.id, tools: [{ type: "file_search" }] },
           ],
-          // Attach the new file to the message.
         },
       ],
     });
@@ -93,46 +95,80 @@ export async function POST(request: NextRequest) {
       run_id: run.id,
     });
 
-    const message = messages.data.pop()!;
+    const message = messages.data.pop();
     let responseContent = "";
-    if (message.content[0].type === "text") {
+
+    if (message && message.content[0].type === "text") {
       const { text } = message.content[0];
-      const { annotations } = text;
-      const citations: string[] = [];
-
-      let index = 0;
-      for (let annotation of annotations) {
-        text.value = text.value.replace(annotation.text, "[" + index + "]");
-        const { file_citation } = annotation;
-        if (file_citation) {
-          const citedFile = await openai.files.retrieve(file_citation.file_id);
-          citations.push("[" + index + "]" + citedFile.filename);
-        }
-        index++;
-      }
       responseContent = text.value;
-      // Remove any code block delimiters and extra text
-      responseContent = responseContent.replace(
-        /```json\n([\s\S]*?)\n```/g,
-        "$1"
-      );
+
+      // Remove code blocks
+      responseContent = responseContent.replace(/```json([\s\S]*?)```/g, "$1");
       responseContent = responseContent.replace(/```([\s\S]*?)```/g, "$1");
-      responseContent = responseContent.replace(/^[\s\S]*?{/, "{");
-      responseContent = responseContent.replace(/}[\s\S]*?$/, "}");
-    }
+
+      // Remove comments from the JSON
+      responseContent = removeComments(responseContent);
+
+      // Extract JSON content
+      const jsonStartIndex = responseContent.indexOf("{");
+      const jsonEndIndex = responseContent.lastIndexOf("}");
+      if (jsonStartIndex !== -1 && jsonEndIndex !== -1) {
+        responseContent = responseContent.slice(
+          jsonStartIndex,
+          jsonEndIndex + 1
+        );
+      } else {
+        throw new Error("No valid JSON object found in the response.");
+      }
+
+      // Parse the JSON content
+      let analysisData;
+      try {
+        analysisData = JSON.parse(responseContent);
+      } catch (parseError) {
+        console.error("JSON parsing error:", parseError);
+        console.error("Response content:", responseContent);
+        throw new Error("Failed to parse JSON response from assistant.");
+      }
+          */
+
     let analysisData;
-    try {
-      analysisData = JSON.parse(responseContent);
-    } catch (parseError) {
-      console.error("JSON parsing error:", parseError);
-      console.error("Response content:", responseContent);
-      throw new Error("Failed to parse JSON response from OpenAI.");
+    if (msg.content[0].type === "text") {
+      const responseContent = msg.content[0].text;
+      console.log("Claude's response:", responseContent);
+
+      // Function to find and parse the first valid JSON object in the string
+      const findAndParseJSON = (str) => {
+        const regex = /\{(?:[^{}]|\{(?:[^{}]|\{[^{}]*\})*\})*\}/g;
+        const matches = str.match(regex);
+        if (matches) {
+          for (const match of matches) {
+            try {
+              return JSON.parse(match);
+            } catch (e) {
+              console.log("Failed to parse JSON:", match);
+              // Continue to the next match if parsing fails
+            }
+          }
+        }
+        throw new Error("No valid JSON object found in the response.");
+      };
+
+      try {
+        analysisData = findAndParseJSON(responseContent);
+        console.log("Parsed analysis data:", analysisData);
+      } catch (parseError) {
+        console.error("JSON parsing error:", parseError);
+        console.error("Response content:", responseContent);
+        throw new Error("Failed to parse JSON response from Claude.");
+      }
+    } else {
+      throw new Error("Unexpected content type in Claude's response.");
     }
 
-    console.log(analysisData);
     return NextResponse.json(analysisData);
   } catch (error) {
-    console.error("Error in  analysis:", error);
+    console.error("Error in analysis:", error);
     return NextResponse.json(
       { error: "Failed to analyze repository" },
       { status: 500 }
