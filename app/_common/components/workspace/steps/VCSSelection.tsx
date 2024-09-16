@@ -8,6 +8,7 @@ import {
 import { faCode } from "@fortawesome/free-solid-svg-icons";
 import Button from "@/_common/components/Button";
 import { useGitHubIntegration } from "@/hooks/useGitHubIntegration";
+import { usePodCreationStore } from "@/contexts/PodCreationStoreContext";
 
 const vcsOptions = [
   {
@@ -76,193 +77,179 @@ const VCSOptionSkeleton = React.memo(() => (
   </div>
 ));
 
-interface VCSSelectionProps {
-  workspaceData: {
-    vcs?: string | null;
-  };
-  updateWorkspaceData: (data: { vcs: string | null }) => void;
-}
+interface VCSSelectionProps {}
 
-const VCSSelection: React.FC<VCSSelectionProps> = React.memo(
-  ({ workspaceData, updateWorkspaceData }) => {
-    const [selectedVCS, setSelectedVCS] = useState<string | null>(
-      workspaceData.vcs || null
-    );
-    const [isLoading, setIsLoading] = useState(true);
-    const { isPending, isConnected, githubOrgName, initiateInstall, error } =
-      useGitHubIntegration();
+const VCSSelection: React.FC<VCSSelectionProps> = React.memo(() => {
+  const vcs = usePodCreationStore((state) => state.vcs);
+  const setVCS = usePodCreationStore((state) => state.setVCS);
 
-    useEffect(() => {
-      updateWorkspaceData({ vcs: selectedVCS });
-    }, [selectedVCS, updateWorkspaceData]);
+  const { isPending, isConnected, githubOrgName, initiateInstall, error } =
+    useGitHubIntegration();
 
-    const handleSelect = useCallback(
-      (vcsName: string) => {
-        if (vcsName === "GitHub") {
-          if (isConnected) {
-            setSelectedVCS(vcsName);
-          } else {
-            initiateInstall();
-          }
-        } else if (vcsName === "Blank Workspace") {
-          setSelectedVCS(vcsName);
-        }
-        // No action for other VCS options yet
-      },
-      [isConnected, initiateInstall]
-    );
-
-    const handleDisable = useCallback(async () => {
-      // Logic to disable integration
-      // This is a placeholder and should be implemented based on your requirements
-      console.log("Disabling integration...");
-    }, []);
-
-    const getButtonProps = useCallback(
-      (option: { name: string }) => {
-        if (option.name === "GitHub") {
-          if (isConnected) {
-            return {
-              text: "Disable",
-              colorType: "danger" as const,
-              handleClick: (e: React.MouseEvent) => {
-                e.stopPropagation();
-                handleDisable();
-              },
-            };
-          } else {
-            return {
-              text: "Connect",
-              colorType: "secondary" as const,
-              handleClick: (e: React.MouseEvent) => {
-                e.stopPropagation();
-                initiateInstall();
-              },
-            };
-          }
-        } else if (option.name === "Blank Workspace") {
-          return null;
+  const handleSelect = useCallback(
+    (vcsName: string) => {
+      if (vcsName === "GitHub") {
+        if (isConnected) {
+          setVCS(vcsName);
         } else {
-          return null;
+          initiateInstall();
         }
-      },
-      [isConnected, initiateInstall, handleDisable]
-    );
+      } else if (vcsName === "Blank Workspace") {
+        setVCS(vcsName);
+      }
+      // No action for other VCS options yet
+    },
+    [isConnected, initiateInstall]
+  );
 
-    const getStatusText = useCallback(
-      (option: { name: string }) => {
-        if (option.name === "GitHub" && isConnected) {
-          return (
-            <span className="flex items-center text-xs">
-              <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
-              <span className="text-accent">{githubOrgName}</span>
-            </span>
-          );
-        } else if (option.name === "Blank Workspace") {
-          return (
-            <span className="flex items-center text-xs">
-              <span className="w-2 h-2 bg-accent rounded-full mr-2"></span>
-              <span className="text-accent">Create From Scratch</span>
-            </span>
-          );
-        } else if (option.name === "GitHub" && !isConnected) {
-          return (
-            <span className="flex items-center text-xs">
-              <span className="w-2 h-2 bg-red-500 rounded-full mr-2"></span>
-              <span className="text-red-500">Not Connected</span>
-            </span>
-          );
+  const handleDisable = useCallback(async () => {
+    // Logic to disable integration
+    // This is a placeholder and should be implemented based on your requirements
+    console.log("Disabling integration...");
+  }, []);
+
+  const getButtonProps = useCallback(
+    (option: { name: string }) => {
+      if (option.name === "GitHub") {
+        if (isConnected) {
+          return {
+            text: "Disable",
+            colorType: "danger" as const,
+            handleClick: (e: React.MouseEvent) => {
+              e.stopPropagation();
+              handleDisable();
+            },
+          };
         } else {
-          return (
-            <span className="flex items-center text-xs">
-              <span className="w-2 h-2 bg-gray-500 rounded-full mr-2"></span>
-              <span className="text-gray-500">Coming Soon</span>
-            </span>
-          );
+          return {
+            text: "Connect",
+            colorType: "secondary" as const,
+            handleClick: (e: React.MouseEvent) => {
+              e.stopPropagation();
+              initiateInstall();
+            },
+          };
         }
-      },
-      [isConnected, githubOrgName]
-    );
+      } else if (option.name === "Blank Workspace") {
+        return null;
+      } else {
+        return null;
+      }
+    },
+    [isConnected, initiateInstall, handleDisable]
+  );
 
-    if (error) {
-      return (
-        <div className="p-6 max-w-[1320px] mx-auto">
-          <div className="text-red-500">Error: {error.message}</div>
-        </div>
-      );
-    }
+  const getStatusText = useCallback(
+    (option: { name: string }) => {
+      if (option.name === "GitHub" && isConnected) {
+        return (
+          <span className="flex items-center text-xs">
+            <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+            <span className="text-accent">{githubOrgName}</span>
+          </span>
+        );
+      } else if (option.name === "Blank Workspace") {
+        return (
+          <span className="flex items-center text-xs">
+            <span className="w-2 h-2 bg-accent rounded-full mr-2"></span>
+            <span className="text-accent">Create From Scratch</span>
+          </span>
+        );
+      } else if (option.name === "GitHub" && !isConnected) {
+        return (
+          <span className="flex items-center text-xs">
+            <span className="w-2 h-2 bg-red-500 rounded-full mr-2"></span>
+            <span className="text-red-500">Not Connected</span>
+          </span>
+        );
+      } else {
+        return (
+          <span className="flex items-center text-xs">
+            <span className="w-2 h-2 bg-gray-500 rounded-full mr-2"></span>
+            <span className="text-gray-500">Coming Soon</span>
+          </span>
+        );
+      }
+    },
+    [isConnected, githubOrgName]
+  );
 
+  if (error) {
     return (
       <div className="p-6 max-w-[1320px] mx-auto">
-        <div className="mb-6">
-          <h1 className="text-lg font-semibold text-white mb-4">
-            Version Control Integration
-          </h1>
-          <p className="text-gray-400 text-[13px]">
-            Connect and manage your repositories effortlessly. Select your
-            preferred version control system, and Intra will set up your
-            workspace for seamless, real-time collaboration.
-          </p>
-        </div>
-
-        {isPending ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {[...Array(4)].map((_, index) => (
-              <VCSOptionSkeleton key={index} />
-            ))}
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {vcsOptions.map((option, index) => {
-              const isSelected = selectedVCS === option.name;
-              const isDisabled =
-                option.name === "GitLab" || option.name === "Bitbucket";
-              return (
-                <div
-                  key={index}
-                  className={`bg-dashboard border ${
-                    isSelected ? "border-green-500" : "border-border"
-                  } rounded-[5px] p-4 flex flex-col justify-between cursor-pointer ${
-                    isDisabled ? "opacity-50 cursor-not-allowed" : ""
-                  } transition-colors duration-300`}
-                  onClick={() => {
-                    if (isDisabled) return;
-                    handleSelect(option.name);
-                  }}
-                >
-                  <div>
-                    <div className="flex items-center mb-2">
-                      <FontAwesomeIcon
-                        icon={option.icon}
-                        className="text-white mr-2"
-                        size="lg"
-                      />
-                      <h3 className="text-white text-sm font-semibold">
-                        {option.name}
-                      </h3>
-                    </div>
-                    <p className="text-gray-400 text-xs">
-                      {option.description}
-                    </p>
-                  </div>
-                  <div className="flex justify-between items-center mt-4">
-                    {getStatusText(option)}
-                    {getButtonProps(option) && (
-                      <Button
-                        {...getButtonProps(option)!}
-                        size="xs"
-                        type="button"
-                      />
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
+        <div className="text-red-500">Error: {error.message}</div>
       </div>
     );
   }
-);
+
+  return (
+    <div className="p-6 max-w-[1320px] mx-auto">
+      <div className="mb-6">
+        <h1 className="text-lg font-semibold text-white mb-4">
+          Version Control Integration
+        </h1>
+        <p className="text-gray-400 text-[13px]">
+          Connect and manage your repositories effortlessly. Select your
+          preferred version control system, and Intra will set up your workspace
+          for seamless, real-time collaboration.
+        </p>
+      </div>
+
+      {isPending ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {[...Array(4)].map((_, index) => (
+            <VCSOptionSkeleton key={index} />
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {vcsOptions.map((option, index) => {
+            const isSelected = vcs === option.name;
+            const isDisabled =
+              option.name === "GitLab" || option.name === "Bitbucket";
+            return (
+              <div
+                key={index}
+                className={`bg-dashboard border ${
+                  isSelected ? "border-green-500" : "border-border"
+                } rounded-[5px] p-4 flex flex-col justify-between cursor-pointer ${
+                  isDisabled ? "opacity-50 cursor-not-allowed" : ""
+                } transition-colors duration-300`}
+                onClick={() => {
+                  if (isDisabled) return;
+                  handleSelect(option.name);
+                }}
+              >
+                <div>
+                  <div className="flex items-center mb-2">
+                    <FontAwesomeIcon
+                      icon={option.icon}
+                      className="text-white mr-2"
+                      size="lg"
+                    />
+                    <h3 className="text-white text-sm font-semibold">
+                      {option.name}
+                    </h3>
+                  </div>
+                  <p className="text-gray-400 text-xs">{option.description}</p>
+                </div>
+                <div className="flex justify-between items-center mt-4">
+                  {getStatusText(option)}
+                  {getButtonProps(option) && (
+                    <Button
+                      {...getButtonProps(option)!}
+                      size="xs"
+                      type="button"
+                    />
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+});
 
 export default VCSSelection;

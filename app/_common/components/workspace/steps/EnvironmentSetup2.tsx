@@ -1,6 +1,6 @@
 // EnvironmentSetup.tsx
 import React, { useEffect, useState, useRef } from "react";
-import { useClaudeAnalysis } from "@/hooks/useClaudeAnalysis";
+import { useClaudeAnalysis } from "@/hooks/useRepositoryAnalysis";
 import { useNotificationContext } from "@/contexts/NotificationContext";
 import Button from "@/_common/components/Button";
 import axios from "axios";

@@ -5,14 +5,12 @@ import { faBook } from "@fortawesome/free-solid-svg-icons";
 import { formatDistanceToNow } from "date-fns";
 import { useGitHubIntegration } from "@/hooks/useGitHubIntegration";
 import Button from "@/_common/components/Button";
+import { usePodCreationStore } from "@/contexts/PodCreationStoreContext";
 
-interface RepositorySelectionProps {
-  workspaceData: any;
-  updateWorkspaceData: (data: any) => void;
-}
+interface RepositorySelectionProps {}
 
 const VCSOptionSkeleton = React.memo(() => (
-  <div className="bg-dashboard border border-border rounded-[5px] p-4 flex flex-col justify-between overflow-hidden">
+  <div className="bg-dashboard border border-border rounded-[5px] p-8 flex flex-col justify-between overflow-hidden">
     <div>
       <div className="flex items-center mb-2">
         {/* Icon Skeleton */}
@@ -52,15 +50,18 @@ const VCSOptionSkeleton = React.memo(() => (
 ));
 
 const RepositorySelection: React.FC<RepositorySelectionProps> = React.memo(
-  ({ workspaceData, updateWorkspaceData }) => {
+  () => {
+    const repositoryName = usePodCreationStore((state) => state.repositoryName);
+    const setRepositoryName = usePodCreationStore(
+      (state) => state.setRepositoryName
+    );
+
     const {
       isConnected,
       isLoading: isIntegrationLoading,
       error: integrationError,
     } = useGitHubIntegration();
-    const [selectedRepo, setSelectedRepo] = useState<string | null>(
-      workspaceData.repository || null
-    );
+
     const [isImmediateLoading, setIsImmediateLoading] = useState(true);
 
     const fetchRepositories = useCallback(async () => {
@@ -91,13 +92,9 @@ const RepositorySelection: React.FC<RepositorySelectionProps> = React.memo(
       }
     }, [isRepoLoading, isIntegrationLoading]);
 
-    const handleSelectRepository = useCallback(
-      (repoFullName: string) => {
-        setSelectedRepo(repoFullName);
-        updateWorkspaceData({ repository: repoFullName });
-      },
-      [updateWorkspaceData]
-    );
+    const handleSelectRepository = useCallback((repoFullName: string) => {
+      setRepositoryName(repoFullName);
+    }, []);
 
     const getStatusText = useCallback((repo) => {
       return (
@@ -155,7 +152,7 @@ const RepositorySelection: React.FC<RepositorySelectionProps> = React.memo(
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {repositories.map((repo: any, index: number) => {
-              const isSelected = selectedRepo === repo.full_name;
+              const isSelected = repositoryName === repo.full_name;
               return (
                 <div
                   key={index}

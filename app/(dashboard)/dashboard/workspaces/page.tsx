@@ -5,17 +5,19 @@ import { faPlus } from "@fortawesome/free-solid-svg-icons";
 import { CodeOutlined, ChevronRight, DvrOutlined } from "@mui/icons-material";
 import Button from "@/_common/components/Button";
 import Modal from "@/_common/components/Modal";
-import WorkspaceCreationModal from "@/_common/components/workspace/WorkspaceCreationModal";
+import PodCreationModal from "@/_common/components/workspace/PodCreationModal";
 import { useGitHubIntegration } from "@/hooks/useGitHubIntegration";
 import { useWebSocketContext } from "@/contexts/WebSocketContext";
 import { useNotificationContext } from "@/contexts/NotificationContext";
 import { createClient } from "@/lib/supabase/supabase-client";
+import { usePodCreationStore } from "@/contexts/PodCreationStoreContext";
 
 export default function WorkspacePage() {
   const [hasWorkspaces, setHasWorkspaces] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { message } = useWebSocketContext();
   const { showNotification } = useNotificationContext();
+  const reset = usePodCreationStore((state) => state.reset);
 
   useEffect(() => {
     // declare the data fetching function
@@ -34,6 +36,7 @@ export default function WorkspacePage() {
   };
 
   const handleCloseModal = () => {
+    reset(); // resets the pod creation modal data when the modal closes
     setIsModalOpen(false);
   };
 
@@ -89,7 +92,7 @@ export default function WorkspacePage() {
       </div>
 
       <Modal isOpen={isModalOpen} onClose={handleCloseModal}>
-        <WorkspaceCreationModal onClose={handleCloseModal} />
+        <PodCreationModal onClose={handleCloseModal} />
       </Modal>
     </div>
   );

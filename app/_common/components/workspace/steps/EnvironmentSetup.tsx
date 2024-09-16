@@ -1,6 +1,5 @@
-// EnvironmentSetup.tsx
 import React, { useEffect, useState, useRef } from "react";
-import { useClaudeAnalysis } from "@/hooks/useClaudeAnalysis";
+import { useRepositoryAnalysis } from "@/hooks/useRepositoryAnalysis";
 import { useNotificationContext } from "@/contexts/NotificationContext";
 import Button from "@/_common/components/Button";
 import axios from "axios";
@@ -10,10 +9,9 @@ import {
   faCircleNotch,
   faTimesCircle,
 } from "@fortawesome/free-solid-svg-icons";
+import { usePodCreationStore } from "@/contexts/PodCreationStoreContext";
 
 interface EnvironmentSetupProps {
-  workspaceData: any;
-  updateWorkspaceData: (data: any) => void;
   onComplete: (success: boolean) => void;
 }
 
@@ -28,16 +26,20 @@ const steps = [
   { name: "Analyzing Repository", key: "analyzing" },
 ];
 
-const EnvironmentSetup: React.FC<EnvironmentSetupProps> = ({
-  workspaceData,
-  updateWorkspaceData,
-  onComplete,
-}) => {
+const EnvironmentSetup: React.FC<EnvironmentSetupProps> = ({ onComplete }) => {
+  const repositoryName = usePodCreationStore((state) => state.repositoryName);
+  const setRepoDir = usePodCreationStore((state) => state.setRepoDir);
+  const setEnvironmentAnalysis = usePodCreationStore(
+    (state) => state.setEnvironmentAnalysis
+  );
+
+  const setVCS = usePodCreationStore((state) => state.setVCS);
+
   const [currentStep, setCurrentStep] = useState(0);
   const [completedSteps, setCompletedSteps] = useState<string[]>([]);
   const [failedStep, setFailedStep] = useState<StepError | null>(null);
   const [analysisResult, setAnalysisResult] = useState<any | null>(null);
-  const { analyzeRepository } = useClaudeAnalysis();
+  const { analyzeRepository } = useRepositoryAnalysis();
   const { showNotification } = useNotificationContext();
 
   const [stepDurations, setStepDurations] = useState<{ [key: string]: number }>(
@@ -52,11 +54,11 @@ const EnvironmentSetup: React.FC<EnvironmentSetupProps> = ({
   const hasStartedProcess = useRef(false);
 
   useEffect(() => {
-    if (workspaceData.repository && !hasStartedProcess.current) {
+    if (repositoryName && !hasStartedProcess.current) {
       hasStartedProcess.current = true;
       startProcess();
     }
-  }, [workspaceData.repository]);
+  }, [repositoryName]);
 
   useEffect(() => {
     let overallTimer: NodeJS.Timeout | null = null;
@@ -83,10 +85,12 @@ const EnvironmentSetup: React.FC<EnvironmentSetupProps> = ({
 
     try {
       // Step 1: Clone the repository
-      await executeStep(steps[0], cloneRepository);
+      const repoDir = await executeStep(steps[0], cloneRepository);
 
       // Step 2: Process the repository
-      const processData = await executeStep(steps[1], processRepository);
+      const processData = await executeStep(steps[1], () =>
+        processRepository(repoDir)
+      );
 
       // Step 3: Analyze the repository
       await executeStep(steps[2], () =>
@@ -151,10 +155,12 @@ const EnvironmentSetup: React.FC<EnvironmentSetupProps> = ({
   const cloneRepository = async () => {
     try {
       const response = await axios.post("/api/clone-repository", {
-        repoFullName: workspaceData.repository,
+        repoFullName: repositoryName,
       });
       // Store repoDir for subsequent steps
-      updateWorkspaceData({ repoDir: response.data.repoDir });
+      const repoDir = response.data.repoDir;
+      setRepoDir(repoDir);
+      return repoDir; // Return repoDir for the next step
     } catch (error) {
       setFailedStep({
         stepKey: steps[0].key,
@@ -171,10 +177,10 @@ const EnvironmentSetup: React.FC<EnvironmentSetupProps> = ({
     }
   };
 
-  const processRepository = async () => {
+  const processRepository = async (repoDir: string) => {
     try {
       const response = await axios.post("/api/process-repository", {
-        repoDir: workspaceData.repoDir,
+        repoDir, // Use the repoDir passed as a parameter
       });
       return {
         repoDir: response.data.repoDir,
@@ -200,9 +206,7 @@ const EnvironmentSetup: React.FC<EnvironmentSetupProps> = ({
     try {
       const analysisData = await analyzeRepository(repoDir, outputFilePath);
       setAnalysisResult(analysisData);
-      updateWorkspaceData({
-        environmentAnalysis: analysisData,
-      });
+      setEnvironmentAnalysis(analysisData);
     } catch (error) {
       setFailedStep({
         stepKey: steps[2].key,
