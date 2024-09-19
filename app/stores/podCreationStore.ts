@@ -7,6 +7,8 @@ export type EnvironmentAnalysisData = {
   dependencies: string[];
   environmentVariables: string[];
   dockerfile: string;
+  startupCommands: string[];
+  ports: number[];
 };
 
 export type PodCreationState = {
@@ -37,6 +39,8 @@ const initialState: PodCreationState = {
     dependencies: [],
     environmentVariables: [],
     dockerfile: "",
+    ports: [],
+    startupCommands: [],
   },
 };
 

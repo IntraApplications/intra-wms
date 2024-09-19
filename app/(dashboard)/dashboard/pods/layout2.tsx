@@ -20,7 +20,6 @@ import { redirect } from "next/navigation";
 
 const navItems = [
   { name: "Home", icon: HomeOutlined },
-
   { name: "Workspaces", icon: DvrOutlined },
   { name: "Worktrees", icon: AccountTreeOutlined },
   { name: "Marketplace", icon: StoreOutlined },
@@ -56,13 +55,13 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
       <div
         className={`fixed top-0 left-0 h-screen bg-primary z-20 transition-all duration-300 ease-in-out ${
           isExpanded ? "w-52" : "w-[68px]"
-        }`}
+        } overflow-hidden`}
         onMouseEnter={() => setIsExpanded(true)}
         onMouseLeave={() => setIsExpanded(false)}
       >
-        <div className="w-full rounded-[3px] h-full p-3 border-border">
+        <div className="h-full p-3">
           {/* Logo */}
-          <div className="flex items-center mt-2 ml-1">
+          <div className="flex items-center mt-2 justify-center">
             <div className="flex rounded-[3px] bg-secondary justify-center items-center h-8 w-8">
               <Image
                 src={IntraLogo}
@@ -72,7 +71,6 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
                 className=""
               />
             </div>
-            {/*
             <span
               className={`ml-3 font-medium text-white transition-all duration-300 ease-in-out ${
                 isExpanded
@@ -82,15 +80,14 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
             >
               Intra app
             </span>
-            */}
           </div>
           {/* Dropdown */}
           <div className="relative mb-4 mt-6">
             <div
-              className={`flex items-center justify-between bg-dashboard border border-border p-2 rounded-[3px] cursor-pointer transition-all duration-300 ease-in-out`}
+              className={`flex items-center bg-dashboard border border-border p-2 rounded-[3px] cursor-pointer transition-all duration-300 ease-in-out`}
               onClick={toggleDropdown}
             >
-              <div className="flex items-center">
+              <div className="flex items-center w-full">
                 {(() => {
                   const SelectedIcon = dropdownItems[selectedDropdownItem].icon;
                   return (
@@ -100,7 +97,6 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
                     />
                   );
                 })()}
-
                 <p
                   className={`text-white font-semibold text-xs ml-2 transition-all duration-300 ease-in-out ${
                     isExpanded
@@ -111,71 +107,63 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
                   {dropdownItems[selectedDropdownItem].name}
                 </p>
               </div>
-              {isExpanded && (
-                <ExpandMore
-                  className={`text-white transform transition-all duration-300 ease-in-outm ${
-                    dropdownOpen ? "rotate-180" : ""
-                  }`}
-                  fontSize="small"
-                />
-              )}
+              <ExpandMore
+                className={`text-white transform transition-all duration-300 ease-in-out absolute right-2 ${
+                  dropdownOpen ? "rotate-180" : ""
+                }`}
+                fontSize="small"
+              />
             </div>
-            {isExpanded && dropdownOpen && (
-              <div className="absolute w-full bg-secondary mt-2 rounded-[3px] shadow-lg z-10 transition-all duration-300 ease-in-out">
-                {dropdownItems.map((item, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center p-2 hover:bg-gray-700 cursor-pointer"
-                    onClick={() => handleDropdownClick(index)}
-                  >
-                    <item.icon className="text-white mr-2" fontSize="small" />
-                    <p className="text-white font-normal text-sm">
-                      {item.name}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            )}
+            <div
+              className={`absolute w-full bg-secondary mt-2 rounded-[3px] shadow-lg z-10 transition-all duration-300 ease-in-out ${
+                isExpanded && dropdownOpen
+                  ? "max-h-[500px] opacity-100"
+                  : "max-h-0 opacity-0"
+              } overflow-hidden`}
+            >
+              {dropdownItems.map((item, index) => (
+                <div
+                  key={index}
+                  className="flex items-center p-2 hover:bg-gray-700 cursor-pointer"
+                  onClick={() => handleDropdownClick(index)}
+                >
+                  <item.icon className="text-white mr-2" fontSize="small" />
+                  <p className="text-white font-normal text-sm">{item.name}</p>
+                </div>
+              ))}
+            </div>
           </div>
           {/* Navigation Items */}
-          <div className="w-full  grid gap-2">
+          <div className="grid gap-2">
             {navItems.map((item, index) => (
               <div
                 key={index}
-                className={`flex items-center p-2 rounded-[3px] cursor-pointer ${
+                className={`flex items-center justify-center p-2 rounded-[3px] cursor-pointer ${
                   activeIndex === index
                     ? "bg-secondary text-white"
                     : "text-sidenav"
                 } hover:bg-secondary hover:text-white transition-all duration-300 ease-in-out`}
                 onClick={() => setActiveIndex(index)}
               >
-                <div className=" flex justify-center ">
-                  <item.icon fontSize="small" className="ml-1" />
-                </div>
                 <div
-                  className={` overflow-hidden transition-[max-width,opacity] duration-300 ease-in-out mr-0`}
-                  style={{
-                    maxWidth: isExpanded ? "100px" : "0px",
-                    opacity: isExpanded ? 1 : 0,
-                  }}
+                  className={`flex justify-center ${
+                    isExpanded ? "w-7" : "w-full"
+                  }`}
                 >
-                  <p
-                    className={`font-medium text-xs ml-2 transition-all duration-300 ease-in-out ${
-                      isExpanded
-                        ? "opacity-100 translate-x-0"
-                        : "opacity-0 -translate-x-2"
-                    }`}
-                  >
+                  <item.icon fontSize="small" />
+                </div>
+                {isExpanded && (
+                  <p className="font-medium text-xs ml-2 transition-all duration-300 ease-in-out">
                     {item.name}
                   </p>
-                </div>
+                )}
               </div>
             ))}
           </div>
         </div>
       </div>
       {/* Main Content */}
-      <div className="ml-[56px] h-full w-full p-3 bg-primary flex items-center transition-all duration-300 ease-in-out">
+      <div className="ml-[68px] h-full w-full p-3 bg-primary flex items-center transition-all duration-300 ease-in-out">
         <div className="h-full w-full bg-dashboard rounded-md border border-border">
           {children}
         </div>

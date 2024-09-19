@@ -11,6 +11,7 @@ import { CodeOutlined, ChevronRight } from "@mui/icons-material";
 import { useGitHubIntegration } from "@/hooks/useGitHubIntegration";
 import { AnimatePresence, motion } from "framer-motion";
 import { usePodCreationStore } from "@/contexts/PodCreationStoreContext";
+import useCreatePod from "@/hooks/useCreatePod";
 
 interface PodCreationModalProps {
   onClose: () => void;
@@ -32,11 +33,16 @@ const PodCreationModal: React.FC<PodCreationModalProps> = ({ onClose }) => {
 
   const { isConnected, initiateInstall } = useGitHubIntegration();
 
-  const vcs = usePodCreationStore((state) => state.vcs);
-  const repositoryName = usePodCreationStore((state) => state.repositoryName);
+  const podCreationData = usePodCreationStore((state) => state);
+
+  const { createPod } = useCreatePod();
+
+  const createPodSpace = () => {
+    createPod.mutate(podCreationData);
+  };
 
   const handleNext = useCallback(() => {
-    if (currentStep === 0 && vcs === "GitHub" && !isConnected) {
+    if (currentStep === 0 && podCreationData.vcs === "GitHub" && !isConnected) {
       initiateInstall();
       return;
     }
@@ -46,7 +52,7 @@ const PodCreationModal: React.FC<PodCreationModalProps> = ({ onClose }) => {
     } else {
       onClose();
     }
-  }, [currentStep, vcs, isConnected, initiateInstall, onClose]);
+  }, [currentStep, podCreationData.vcs, isConnected, initiateInstall, onClose]);
 
   const handleBack = useCallback(() => {
     if (currentStep > 0) {
@@ -59,14 +65,19 @@ const PodCreationModal: React.FC<PodCreationModalProps> = ({ onClose }) => {
 
   const isNextEnabled = useCallback(() => {
     if (currentStep === 0) {
-      return !!vcs;
+      return !!podCreationData.vcs;
     } else if (currentStep === 1) {
-      return !!repositoryName;
+      return !!podCreationData.repositoryName;
     } else if (currentStep === 2) {
       return isEnvironmentSetupComplete;
     }
     return true;
-  }, [currentStep, vcs, repositoryName, isEnvironmentSetupComplete]);
+  }, [
+    currentStep,
+    podCreationData.vcs,
+    podCreationData.repositoryName,
+    isEnvironmentSetupComplete,
+  ]);
 
   const handleEnvironmentSetupComplete = useCallback((success: boolean) => {
     setIsEnvironmentSetupComplete(success);
@@ -92,6 +103,8 @@ const PodCreationModal: React.FC<PodCreationModalProps> = ({ onClose }) => {
     x: { type: "spring", stiffness: 300, damping: 30 },
     opacity: { duration: 0.2 },
   };
+
+  const isLastStep = currentStep === steps.length - 1 ? true : false;
 
   return (
     <div
@@ -148,7 +161,7 @@ const PodCreationModal: React.FC<PodCreationModalProps> = ({ onClose }) => {
           <ProgressDots currentStep={currentStep} totalSteps={steps.length} />
         </div>
         <Button
-          text={currentStep === steps.length - 1 ? "Create" : "Continue"}
+          text={isLastStep ? "Create" : "Continue"}
           size="small"
           type="button"
           colorType="tertiary"
