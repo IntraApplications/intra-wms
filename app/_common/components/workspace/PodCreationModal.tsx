@@ -1,12 +1,12 @@
-// PodCreationModal.tsx
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import Button from "@/_common/components/Button";
 import ProgressDots from "@/_common/components/ProgressDots";
 import VCSSelection from "./steps/VCSSelection";
 import RepositorySelection from "./steps/RepositorySelection";
-import EnvironmentSetup from "./steps/EnvironmentSetup";
+import EnvironmentSetup from "./steps/WorkspaceInitializer";
 import Configuration from "./steps/Configuration";
 import ReviewSetup from "./steps/ReviewSetup";
+import LoadingPage from "./steps/LoadingPage";
 import { CodeOutlined, ChevronRight } from "@mui/icons-material";
 import { useGitHubIntegration } from "@/hooks/useGitHubIntegration";
 import { AnimatePresence, motion } from "framer-motion";
@@ -22,46 +22,69 @@ const steps = [
   { title: "Repository Selection", component: RepositorySelection },
   { title: "Environment Setup", component: EnvironmentSetup },
   { title: "Configuration", component: Configuration },
-  { title: "Review", component: ReviewSetup },
+  //{ title: "Review", component: ReviewSetup },
+  { title: "Creating Pod", component: LoadingPage },
 ];
 
 const PodCreationModal: React.FC<PodCreationModalProps> = ({ onClose }) => {
   const [currentStep, setCurrentStep] = useState<number>(0);
-  const [direction, setDirection] = useState<1 | -1>(1); // 1 for forward, -1 for backward
+  const [direction, setDirection] = useState<1 | -1>(1);
   const [isEnvironmentSetupComplete, setIsEnvironmentSetupComplete] =
     useState<boolean>(false);
+  const [loadingMessages, setLoadingMessages] = useState<any[]>([]);
 
   const { isConnected, initiateInstall } = useGitHubIntegration();
-
   const podCreationData = usePodCreationStore((state) => state);
-
   const { createPod } = useCreatePod();
 
-  const createPodSpace = () => {
+  const createPodSpace = useCallback(() => {
+    setCurrentStep(steps.length - 1); // Move to the LoadingPage step
     createPod.mutate(podCreationData);
-  };
+  }, [createPod, podCreationData]);
+
+  const CurrentStepComponent = steps[currentStep].component;
+  useEffect(() => {
+    console.log("IS LOADINGGGG");
+    if (createPod.isPending) {
+      console.log(createPod.isPending);
+
+      createPod.onMessage = (data: any) => {
+        console.log("MESSAGEFDSFSDFDS");
+
+        console.log(data);
+        setLoadingMessages((prevMessages) => [...prevMessages, data]);
+      };
+    }
+  }, [createPod.isPending]);
 
   const handleNext = useCallback(() => {
     if (currentStep === 0 && podCreationData.vcs === "GitHub" && !isConnected) {
       initiateInstall();
       return;
     }
-    if (currentStep < steps.length - 1) {
+    if (currentStep === steps.length - 2) {
+      createPodSpace();
+    } else if (currentStep < steps.length - 1) {
       setDirection(1);
       setCurrentStep((prevStep) => prevStep + 1);
     } else {
       onClose();
     }
-  }, [currentStep, podCreationData.vcs, isConnected, initiateInstall, onClose]);
+  }, [
+    currentStep,
+    podCreationData.vcs,
+    isConnected,
+    initiateInstall,
+    createPodSpace,
+    onClose,
+  ]);
 
   const handleBack = useCallback(() => {
-    if (currentStep > 0) {
+    if (currentStep > 0 && currentStep < steps.length - 1) {
       setDirection(-1);
       setCurrentStep((prevStep) => prevStep - 1);
     }
   }, [currentStep]);
-
-  const CurrentStepComponent = steps[currentStep].component;
 
   const isNextEnabled = useCallback(() => {
     if (currentStep === 0) {
@@ -71,7 +94,7 @@ const PodCreationModal: React.FC<PodCreationModalProps> = ({ onClose }) => {
     } else if (currentStep === 2) {
       return isEnvironmentSetupComplete;
     }
-    return true;
+    return currentStep < steps.length - 1;
   }, [
     currentStep,
     podCreationData.vcs,
@@ -83,7 +106,6 @@ const PodCreationModal: React.FC<PodCreationModalProps> = ({ onClose }) => {
     setIsEnvironmentSetupComplete(success);
   }, []);
 
-  // Animation variants for Framer Motion
   const variants = {
     enter: (direction: number) => ({
       x: direction > 0 ? 300 : -300,
@@ -104,7 +126,7 @@ const PodCreationModal: React.FC<PodCreationModalProps> = ({ onClose }) => {
     opacity: { duration: 0.2 },
   };
 
-  const isLastStep = currentStep === steps.length - 1 ? true : false;
+  const isLastStep = currentStep === steps.length - 1;
 
   return (
     <div
@@ -141,9 +163,13 @@ const PodCreationModal: React.FC<PodCreationModalProps> = ({ onClose }) => {
             className="absolute inset-0 flex flex-col"
           >
             <div className="p-6 flex-grow overflow-y-auto">
-              <CurrentStepComponent
-                onComplete={handleEnvironmentSetupComplete}
-              />
+              {currentStep === steps.length - 1 ? (
+                <LoadingPage messages={loadingMessages} />
+              ) : (
+                <CurrentStepComponent
+                  onComplete={handleEnvironmentSetupComplete}
+                />
+              )}
             </div>
           </motion.div>
         </AnimatePresence>
@@ -155,17 +181,17 @@ const PodCreationModal: React.FC<PodCreationModalProps> = ({ onClose }) => {
           type="button"
           colorType="secondary"
           handleClick={handleBack}
-          disabled={currentStep === 0}
+          disabled={currentStep === 0 || isLastStep}
         />
         <div className="flex-grow flex justify-center">
           <ProgressDots currentStep={currentStep} totalSteps={steps.length} />
         </div>
         <Button
-          text={isLastStep ? "Create" : "Continue"}
+          text={isLastStep ? "Close" : "Continue"}
           size="small"
           type="button"
           colorType="tertiary"
-          handleClick={handleNext}
+          handleClick={isLastStep ? onClose : handleNext}
           disabled={!isNextEnabled()}
         />
       </div>

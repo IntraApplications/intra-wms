@@ -138,6 +138,7 @@ const Configuration: React.FC<ConfigurationProps> = () => {
 
       <div className="mb-6">
         {/* Language Version */}
+        {/*}
         <div className="mb-6">
           <Input
             label="Language Version"
@@ -148,6 +149,7 @@ const Configuration: React.FC<ConfigurationProps> = () => {
             error={undefined}
           />
         </div>
+          */}
 
         {/* Environment Variables */}
         <div className="mb-6">
@@ -205,6 +207,7 @@ const Configuration: React.FC<ConfigurationProps> = () => {
         </div>
 
         {/* Startup Commands */}
+        {/*
         <div className="mb-6">
           <div className="flex items-center justify-between mb-2">
             <label className="text-white text-[13px] font-medium">
@@ -248,8 +251,9 @@ const Configuration: React.FC<ConfigurationProps> = () => {
             ))}
           </AnimatePresence>
         </div>
-
+*/}
         {/* Ports */}
+        {/*
         <div className="mb-6">
           <div className="flex items-center justify-between mb-2">
             <label className="text-white text-[13px] font-medium">Ports</label>
@@ -280,6 +284,7 @@ const Configuration: React.FC<ConfigurationProps> = () => {
                     error={undefined}
                   />
                 </div>
+
                 <button
                   onClick={() => removePort(index)}
                   className="text-red-500 hover:text-red-400 focus:outline-none mt-6"
@@ -290,6 +295,7 @@ const Configuration: React.FC<ConfigurationProps> = () => {
             ))}
           </AnimatePresence>
         </div>
+            */}
       </div>
 
       {/* Notes */}

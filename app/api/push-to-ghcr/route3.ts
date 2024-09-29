@@ -43,47 +43,21 @@ const parseDockerBuildStep = (line: string): DockerBuildStep | null => {
   return null;
 };
 
-const explanationCache = new Map<string, string>();
-
 const getHumanReadableExplanation = async (text: string): Promise<string> => {
-  if (!text.trim()) {
-    return "No build output to summarize";
-  }
+  const message = await anthropic.messages.create({
+    model: "claude-3-5-sonnet-20240620",
+    max_tokens: 50,
+    messages: [
+      {
+        role: "user",
+        content: `Explain the following Docker build output in a very concise, human-readable format (1-2 short sentences max):
 
-  if (explanationCache.has(text)) {
-    return explanationCache.get(text)!;
-  }
-
-  try {
-    const message = await anthropic.messages.create({
-      model: "claude-3-5-sonnet-20240620",
-      max_tokens: 50,
-      temperature: 0,
-      messages: [
-        {
-          role: "user",
-          content: `Summarize the Docker build output using a brief, descriptive phrase instead of a full sentence. For example: 'Installing dependencies', 'Copying files', 'Setting environment variables'. NOTE: ONLY SEND THE DESCRIPTION BACK, NO EXPLANATION. For example:
-
-ERROR: failed to solve: process "/bin/sh -c npm install -g expo-cli" did not complete successfully: exit code: 254
-
-should return something like 'Unable to install npm dependencies'.
-
-Docker Build Output:
 ${text}`,
-        },
-      ],
-    });
+      },
+    ],
+  });
 
-    const explanation =
-      message.content?.[0]?.text || "No explanation available.";
-
-    explanationCache.set(text, explanation.trim());
-
-    return explanation.trim();
-  } catch (error) {
-    console.error("Error fetching explanation:", error);
-    return "Error generating explanation.";
-  }
+  return message.content[0].text;
 };
 
 const executeCommand = (
@@ -95,33 +69,34 @@ const executeCommand = (
   return new Promise((resolve, reject) => {
     const proc = spawn(command, args, { shell: true, ...options });
     let buffer = "";
+    let lastProcessTime = Date.now();
 
-    const processLine = async (line: string) => {
-      const step = parseDockerBuildStep(line);
-      if (step) {
-        step.humanReadable = await getHumanReadableExplanation(line);
-        sendUpdate(step);
-      } else if (line.trim()) {
-        const humanReadable = await getHumanReadableExplanation(line);
-        sendUpdate({
-          type: "overall",
-          step: -1,
-          total: -1,
-          command: "",
-          humanReadable,
-        });
+    const processBuffer = async () => {
+      if (buffer.trim()) {
+        const step = parseDockerBuildStep(buffer);
+        if (step) {
+          step.humanReadable = await getHumanReadableExplanation(buffer);
+          sendUpdate(step);
+        } else {
+          const humanReadable = await getHumanReadableExplanation(buffer);
+          sendUpdate({
+            type: "overall",
+            step: -1,
+            total: -1,
+            command: "",
+            humanReadable,
+          });
+        }
+        buffer = "";
       }
     };
 
     const handleData = async (data: Buffer) => {
-      const text = data.toString();
-      console.log(text);
-      buffer += text;
-      const lines = buffer.split("\n");
-      buffer = lines.pop() || "";
-
-      for (const line of lines) {
-        await processLine(line);
+      buffer += data.toString();
+      const currentTime = Date.now();
+      if (currentTime - lastProcessTime > 5000) {
+        await processBuffer();
+        lastProcessTime = currentTime;
       }
     };
 
@@ -133,9 +108,7 @@ const executeCommand = (
     });
 
     proc.on("close", async (code) => {
-      if (buffer) {
-        await processLine(buffer);
-      }
+      await processBuffer(); // Process any remaining data in the buffer
       if (code === 0) {
         resolve();
       } else {
@@ -264,14 +237,8 @@ export async function GET(request: NextRequest) {
           )
         );
       } finally {
-        controller.enqueue(
-          encoder.encode(`data: ${JSON.stringify({ type: "end" })}\n\n`)
-        );
         controller.close();
       }
-    },
-    cancel() {
-      // Handle cancellation if needed
     },
   });
 

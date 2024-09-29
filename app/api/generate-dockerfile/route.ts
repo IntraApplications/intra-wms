@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 import Anthropic from "@anthropic-ai/sdk";
+import { githubApp } from "@/lib/github";
 import { createClient } from "@/lib/supabase/supabase-server";
 import fs from "fs";
 import { prompt } from "./prompt";
@@ -9,6 +10,23 @@ import { prompt } from "./prompt";
 import { promisify } from "util";
 
 const readFile = promisify(fs.readFile);
+
+function generateGithubUrlWithToken(repoUrl, token) {
+  // Extract the owner and repo name from the given GitHub URL
+  const urlParts = repoUrl.match(/github\.com\/([^\/]+)\/([^\/]+)\.git/);
+  if (!urlParts || urlParts.length < 3) {
+    throw new Error("Invalid GitHub repository URL");
+  }
+
+  const owner = urlParts[1];
+  const repo = urlParts[2];
+
+  // Construct the full GitHub URL with the token
+  const cloneUrlWithToken = `https://x-access-token:${token}@github.com/${owner.toLowerCase()}/${repo.toLowerCase()}.git`;
+  return cloneUrlWithToken;
+}
+
+// Output: https://x-access-token:ghp_1234567890abcdefghij@github.com/IntraApplications/intra-websocket-hub.git
 
 const anthropic = new Anthropic({
   apiKey: process.env.NEXT_PUBLIC_CLAUDE_API_KEY,
@@ -28,7 +46,7 @@ const removeComments = (jsonString: string) => {
 };
 
 export async function POST(request: NextRequest) {
-  const { outputFilePath } = await request.json();
+  const { repositoryURL, mergedRepositoryFile } = await request.json();
 
   const supabase = createClient();
 
@@ -41,7 +59,31 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const fileContents = await readFile(outputFilePath, "utf-8");
+    // Get the workspace data
+    const { data: workspaceData, error: workspaceError } = await supabase
+      .from("workspaces")
+      .select("id, github_app_installation_id, github_org_name")
+      .single();
+
+    if (workspaceError || !workspaceData?.github_app_installation_id) {
+      return NextResponse.json(
+        { error: "GitHub is not connected." },
+        { status: 400 }
+      );
+    }
+
+    const installationId = workspaceData.github_app_installation_id;
+
+    // Get an Octokit instance for this installation
+    const octokit = await githubApp.getInstallationOctokit(
+      Number(installationId)
+    );
+
+    const auth = await octokit.auth({
+      type: "installation",
+    });
+
+    console.log(auth.token); // The installation token
 
     const msg = await anthropic.messages.create({
       model: "claude-3-5-sonnet-20240620",
@@ -54,7 +96,14 @@ export async function POST(request: NextRequest) {
           content: [
             {
               type: "text",
-              text: `Analyze the following codebase information:\n\n${fileContents}`,
+              text: `Analyze the following codebase information:\n\n${mergedRepositoryFile}, 
+              also we are downloading the repo from the remote ${generateGithubUrlWithToken(
+                repositoryURL,
+                auth.token
+              )} into the docker image, 
+              rather then downloading from the path. so include this remote download in the docker file, and not the current directory`,
+              // THIS prompt is effective for generating a docker file, and building the repo contents from a remote repo, rather
+              // then storing it locally in a temp file
             },
           ],
         },

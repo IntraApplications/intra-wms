@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
-import { useRepositoryAnalysis } from "@/hooks/useRepositoryAnalysis";
+import { useGenerateDockerfile } from "@/hooks/useGenerateDockerfile";
 import { useNotificationContext } from "@/contexts/NotificationContext";
 import Button from "@/_common/components/Button";
 import axios from "axios";
@@ -8,8 +8,12 @@ import {
   faCheckCircle,
   faCircleNotch,
   faTimesCircle,
+  faRocket,
+  faExclamationTriangle,
 } from "@fortawesome/free-solid-svg-icons";
 import { usePodCreationStore } from "@/contexts/PodCreationStoreContext";
+import { EnvironmentAnalysisData } from "@/stores/podCreationStore";
+import { motion } from "framer-motion";
 
 interface EnvironmentSetupProps {
   onComplete: (success: boolean) => void;
@@ -21,25 +25,29 @@ interface StepError {
 }
 
 const steps = [
-  { name: "Cloning Repository", key: "cloning" },
-  { name: "Processing Repository", key: "processing" },
+  { name: "Downloading Repository", key: "cloning" },
+  { name: "Processing", key: "processing" },
   { name: "Analyzing Repository", key: "analyzing" },
 ];
 
 const EnvironmentSetup: React.FC<EnvironmentSetupProps> = ({ onComplete }) => {
   const repositoryName = usePodCreationStore((state) => state.repositoryName);
+  const repositoryURL = usePodCreationStore((state) => state.repositoryURL);
+  const setRepositoryURL = usePodCreationStore(
+    (state) => state.setRepositoryURL
+  );
   const setRepoDir = usePodCreationStore((state) => state.setRepoDir);
   const setEnvironmentAnalysis = usePodCreationStore(
     (state) => state.setEnvironmentAnalysis
   );
 
-  const setVCS = usePodCreationStore((state) => state.setVCS);
-
+  const environmentAnalysis = usePodCreationStore(
+    (state) => state.environmentAnalysis
+  );
   const [currentStep, setCurrentStep] = useState(0);
   const [completedSteps, setCompletedSteps] = useState<string[]>([]);
   const [failedStep, setFailedStep] = useState<StepError | null>(null);
-  const [analysisResult, setAnalysisResult] = useState<any | null>(null);
-  const { analyzeRepository } = useRepositoryAnalysis();
+  const { generateDockerfile } = useGenerateDockerfile();
   const { showNotification } = useNotificationContext();
 
   const [stepDurations, setStepDurations] = useState<{ [key: string]: number }>(
@@ -50,6 +58,9 @@ const EnvironmentSetup: React.FC<EnvironmentSetupProps> = ({ onComplete }) => {
   }>({});
   const [overallStartTime, setOverallStartTime] = useState<number | null>(null);
   const [overallElapsedTime, setOverallElapsedTime] = useState<number>(0);
+
+  const [showWorkspaceData, setShowWorkspaceData] = useState(false);
+  const [setupComplete, setSetupComplete] = useState(false);
 
   const hasStartedProcess = useRef(false);
 
@@ -78,24 +89,15 @@ const EnvironmentSetup: React.FC<EnvironmentSetupProps> = ({ onComplete }) => {
     setCurrentStep(0);
     setCompletedSteps([]);
     setFailedStep(null);
-    setAnalysisResult(null);
     setStepDurations({});
     setOverallElapsedTime(0);
     setOverallStartTime(Date.now());
+    setSetupComplete(false);
 
     try {
-      // Step 1: Clone the repository
-      const repoDir = await executeStep(steps[0], cloneRepository);
-
-      // Step 2: Process the repository
-      const processData = await executeStep(steps[1], () =>
-        processRepository(repoDir)
-      );
-
-      // Step 3: Analyze the repository
-      await executeStep(steps[2], () =>
-        analyzeRepo(processData.repoDir, processData.outputFilePath)
-      );
+      await executeStep(steps[0], () => cloneRepository());
+      await executeStep(steps[1], () => scanRepository());
+      await executeStep(steps[2], () => generateWorkspaceData());
 
       showNotification({
         type: "success",
@@ -103,10 +105,10 @@ const EnvironmentSetup: React.FC<EnvironmentSetupProps> = ({ onComplete }) => {
         message: "Workspace environment is ready.",
       });
 
-      // Notify parent component that setup is complete
+      setSetupComplete(true);
       onComplete(true);
     } catch (error) {
-      // Notify parent component that setup failed
+      setSetupComplete(true);
       onComplete(false);
     }
   };
@@ -117,7 +119,6 @@ const EnvironmentSetup: React.FC<EnvironmentSetupProps> = ({ onComplete }) => {
   ) => {
     setCurrentStep(steps.findIndex((s) => s.key === step.key));
 
-    // Initialize step duration and start timer
     setStepDurations((prev) => ({ ...prev, [step.key]: 0 }));
     const stepStartTime = Date.now();
 
@@ -134,7 +135,6 @@ const EnvironmentSetup: React.FC<EnvironmentSetupProps> = ({ onComplete }) => {
       const result = await stepFunction();
       setCompletedSteps((prev) => [...prev, step.key]);
 
-      // Clear timer and record final duration
       clearInterval(timer);
       setStepDurations((prev) => ({
         ...prev,
@@ -142,7 +142,6 @@ const EnvironmentSetup: React.FC<EnvironmentSetupProps> = ({ onComplete }) => {
       }));
       return result;
     } catch (error) {
-      // Clear timer and record final duration
       clearInterval(timer);
       setStepDurations((prev) => ({
         ...prev,
@@ -157,10 +156,9 @@ const EnvironmentSetup: React.FC<EnvironmentSetupProps> = ({ onComplete }) => {
       const response = await axios.post("/api/clone-repository", {
         repoFullName: repositoryName,
       });
-      // Store repoDir for subsequent steps
       const repoDir = response.data.repoDir;
       setRepoDir(repoDir);
-      return repoDir; // Return repoDir for the next step
+      return repoDir;
     } catch (error) {
       setFailedStep({
         stepKey: steps[0].key,
@@ -177,14 +175,13 @@ const EnvironmentSetup: React.FC<EnvironmentSetupProps> = ({ onComplete }) => {
     }
   };
 
-  const processRepository = async (repoDir: string) => {
+  const scanRepository = async () => {
     try {
-      const response = await axios.post("/api/process-repository", {
-        repoDir, // Use the repoDir passed as a parameter
+      const response = await axios.post("/api/repository-scan", {
+        repositoryURL,
       });
       return {
-        repoDir: response.data.repoDir,
-        outputFilePath: response.data.outputFilePath,
+        mergedRepositoryFile: response.data.mergedRepositoryFile,
       };
     } catch (error) {
       setFailedStep({
@@ -202,10 +199,12 @@ const EnvironmentSetup: React.FC<EnvironmentSetupProps> = ({ onComplete }) => {
     }
   };
 
-  const analyzeRepo = async (repoDir: string, outputFilePath: string) => {
+  const generateWorkspaceData = async () => {
     try {
-      const analysisData = await analyzeRepository(repoDir, outputFilePath);
-      setAnalysisResult(analysisData);
+      const analysisData = await generateDockerfile({
+        mergedRepositoryFile: "simulated_content",
+        repositoryURL,
+      });
       setEnvironmentAnalysis(analysisData);
     } catch (error) {
       setFailedStep({
@@ -221,6 +220,13 @@ const EnvironmentSetup: React.FC<EnvironmentSetupProps> = ({ onComplete }) => {
       onComplete(false);
       throw error;
     }
+  };
+
+  const isEnvironmentAnalysisComplete = (
+    analysis: EnvironmentAnalysisData | null
+  ): boolean => {
+    if (!analysis) return false;
+    return analysis.dockerfile !== "";
   };
 
   const renderStepIcon = (stepKey: string, index: number) => {
@@ -254,7 +260,7 @@ const EnvironmentSetup: React.FC<EnvironmentSetupProps> = ({ onComplete }) => {
     }
   };
 
-  const iconSizeClass = "text-xl"; // Adjusted icon size for consistency
+  const iconSizeClass = "text-xl";
 
   return (
     <div className="p-6 max-w-[1320px] mx-auto">
@@ -298,52 +304,74 @@ const EnvironmentSetup: React.FC<EnvironmentSetupProps> = ({ onComplete }) => {
         </div>
       )}
 
-      {analysisResult && (
-        <div className="bg-dashboard border border-border rounded-[5px] p-4 mb-6">
-          <h2 className="text-white text-lg font-semibold mb-4">
-            Environment Analysis
-          </h2>
-          <div className="text-gray-400 text-sm space-y-2">
-            <p>
-              <strong className="text-white">Project Type:</strong>{" "}
-              {analysisResult.projectType}
-            </p>
-            <p>
-              <strong className="text-white">Language Version:</strong>{" "}
-              {analysisResult.languageVersion}
-            </p>
-            <p>
-              <strong className="text-white">Dependencies:</strong>{" "}
-              {analysisResult.dependencies.join(", ")}
-            </p>
-            {analysisResult.environmentVariables && (
-              <p>
-                <strong className="text-white">Environment Variables:</strong>{" "}
-                {analysisResult.environmentVariables.join(", ")}
-              </p>
-            )}
-            {analysisResult.notes && (
-              <p>
-                <strong className="text-white">Notes:</strong>{" "}
-                {analysisResult.notes}
-              </p>
-            )}
-          </div>
-          <div className="mt-6">
-            <h3 className="text-white text-md font-semibold mb-2">
-              Dockerfile
-            </h3>
-            <pre className="bg-gray-800 text-gray-300 p-4 rounded-md overflow-x-auto text-sm">
-              {analysisResult.dockerfile}
-            </pre>
-          </div>
-          {overallElapsedTime > 0 && (
-            <p className="text-gray-400 text-sm mt-4">
-              Total Setup Time: {overallElapsedTime.toFixed(0)} seconds
-            </p>
-          )}
-        </div>
+      {setupComplete && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className={`flex items-center ${
+            failedStep ? "text-red-400" : "text-green-400"
+          } mb-6`}
+        >
+          <FontAwesomeIcon
+            icon={failedStep ? faExclamationTriangle : faRocket}
+            className="mr-2"
+          />
+          <span className="text-sm font-medium">
+            {failedStep
+              ? "Setup Failed"
+              : "Setup Complete: Your workspace is ready to use!"}
+          </span>
+        </motion.div>
       )}
+
+      {showWorkspaceData &&
+        isEnvironmentAnalysisComplete(environmentAnalysis) && (
+          <div className="bg-dashboard border border-border rounded-[5px] p-4 mb-6">
+            <h2 className="text-white text-lg font-semibold mb-4">
+              Environment Analysis
+            </h2>
+            <div className="text-gray-400 text-sm space-y-2">
+              <p>
+                <strong className="text-white">Project Type:</strong>{" "}
+                {environmentAnalysis.projectType}
+              </p>
+              <p>
+                <strong className="text-white">Language Version:</strong>{" "}
+                {environmentAnalysis.languageVersion}
+              </p>
+              <p>
+                <strong className="text-white">Dependencies:</strong>{" "}
+                {environmentAnalysis.dependencies.join(", ")}
+              </p>
+              {environmentAnalysis.environmentVariables && (
+                <p>
+                  <strong className="text-white">Environment Variables:</strong>{" "}
+                  {environmentAnalysis.environmentVariables.join(", ")}
+                </p>
+              )}
+              {environmentAnalysis.notes && (
+                <p>
+                  <strong className="text-white">Notes:</strong>{" "}
+                  {environmentAnalysis.notes}
+                </p>
+              )}
+            </div>
+            <div className="mt-6">
+              <h3 className="text-white text-md font-semibold mb-2">
+                Dockerfile
+              </h3>
+              <pre className="bg-gray-800 text-gray-300 p-4 rounded-md overflow-x-auto text-sm">
+                {environmentAnalysis.dockerfile}
+              </pre>
+            </div>
+            {overallElapsedTime > 0 && (
+              <p className="text-gray-400 text-sm mt-4">
+                Total Setup Time: {overallElapsedTime.toFixed(0)} seconds
+              </p>
+            )}
+          </div>
+        )}
     </div>
   );
 };

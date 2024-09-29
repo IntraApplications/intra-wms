@@ -56,6 +56,11 @@ const RepositorySelection: React.FC<RepositorySelectionProps> = React.memo(
       (state) => state.setRepositoryName
     );
 
+    const repositoryURL = usePodCreationStore((state) => state.repositoryURL);
+    const setRepositoryURL = usePodCreationStore(
+      (state) => state.setRepositoryURL
+    );
+
     const {
       isConnected,
       isLoading: isIntegrationLoading,
@@ -92,9 +97,13 @@ const RepositorySelection: React.FC<RepositorySelectionProps> = React.memo(
       }
     }, [isRepoLoading, isIntegrationLoading]);
 
-    const handleSelectRepository = useCallback((repoFullName: string) => {
-      setRepositoryName(repoFullName);
-    }, []);
+    const handleSelectRepository = useCallback(
+      (repoFullName: string, repoCloneUrl: string) => {
+        setRepositoryName(repoFullName);
+        setRepositoryURL(repoCloneUrl);
+      },
+      []
+    );
 
     const getStatusText = useCallback((repo) => {
       return (
@@ -159,7 +168,9 @@ const RepositorySelection: React.FC<RepositorySelectionProps> = React.memo(
                   className={`bg-dashboard border ${
                     isSelected ? "border-green-500" : "border-border"
                   } rounded-[5px] p-4 flex flex-col justify-between cursor-pointer transition-colors duration-300`}
-                  onClick={() => handleSelectRepository(repo.full_name)}
+                  onClick={() =>
+                    handleSelectRepository(repo.full_name, repo.clone_url)
+                  }
                 >
                   <div>
                     <div className="flex items-center">
