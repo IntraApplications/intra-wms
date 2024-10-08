@@ -43,6 +43,8 @@ const Configuration: React.FC<ConfigurationProps> = () => {
     setEnvironmentAnalysis({
       environmentVariables: updatedEnvVars,
     });
+
+    console.log(environmentAnalysis);
   };
 
   const addEnvVar = () => {
@@ -50,6 +52,8 @@ const Configuration: React.FC<ConfigurationProps> = () => {
     setEnvironmentAnalysis({
       environmentVariables: updatedEnvVars,
     });
+
+    console.log(environmentAnalysis);
   };
 
   const removeEnvVar = (index: number) => {

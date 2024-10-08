@@ -1,13 +1,12 @@
-// app/api/claude-analyze/analyzeScript.ts
 import fs from "fs";
 import yaml from "js-yaml";
 import xml2js from "xml2js";
 import toml from "@iarna/toml";
 
-export async function readRepopack(filePath: string) {
-  const content = fs.readFileSync(filePath, "utf-8");
+export async function readRepopack(content: string) {
   const files: Record<string, string> = {};
 
+  console.log("content");
   const repoFilesIndex = content.indexOf("Repository Files");
   if (repoFilesIndex === -1) {
     throw new Error("Repository Files section not found in repopack.txt");
@@ -431,20 +430,193 @@ export async function analyzeProject(files: Record<string, string>) {
   }
 
   return {
-    projectTypes: Array.from(projectTypes),
+    projectTypes,
     languageVersion,
-    dependencies: Array.from(dependencies),
-    osRequirements: Array.from(osRequirements),
-    environmentVariables: Array.from(environmentVariables),
-    ports: Array.from(ports).map(Number),
-    notes: notes.trim(),
+    dependencies,
+    osRequirements,
+    environmentVariables,
+    ports,
+    notes,
   };
 }
 
 export function generateDockerfile(
-  analysis: Awaited<ReturnType<typeof analyzeProject>>,
+  projectTypes: Set<string>,
+  languageVersion: string,
+  dependencies: Set<string>,
+  osRequirements: Set<string>,
+  environmentVariables: Set<string>,
+  ports: Set<number>,
+  notes: string
+): string {
+  let dockerfile = "# Development Dockerfile\n\n";
+
+  // Base image selection
+  if (projectTypes.has("Node.js")) {
+    dockerfile += `FROM node:${languageVersion.replace(
+      "Node.js ",
+      ""
+    )}-alpine\n\n`;
+  } else if (projectTypes.has("Python")) {
+    dockerfile += `FROM python:${languageVersion.replace(
+      "Python ",
+      ""
+    )}-alpine\n\n`;
+  } else if (projectTypes.has("Java") || projectTypes.has("Android")) {
+    dockerfile += `FROM openjdk:${languageVersion.replace(
+      "Java ",
+      ""
+    )}-alpine\n\n`;
+  } else if (projectTypes.has("Go")) {
+    dockerfile += `FROM golang:${languageVersion.replace(
+      "Go ",
+      ""
+    )}-alpine\n\n`;
+  } else if (projectTypes.has("Ruby")) {
+    dockerfile += `FROM ruby:${languageVersion.replace(
+      "Ruby ",
+      ""
+    )}-alpine\n\n`;
+  } else if (projectTypes.has("PHP")) {
+    dockerfile += `FROM php:${languageVersion.replace("PHP ", "")}-alpine\n\n`;
+  } else if (projectTypes.has(".NET")) {
+    dockerfile += `FROM mcr.microsoft.com/dotnet/sdk:${languageVersion.replace(
+      ".NET ",
+      ""
+    )}-alpine\n\n`;
+  } else if (projectTypes.has("Rust")) {
+    dockerfile += `FROM rust:${languageVersion.replace(
+      "Rust ",
+      ""
+    )}-alpine\n\n`;
+  } else if (projectTypes.has("Swift") || projectTypes.has("iOS")) {
+    // Note: Swift doesn't have official Alpine images, so we'll use the slim version
+    dockerfile += `FROM swift:${languageVersion.replace(
+      "Swift ",
+      ""
+    )}-slim\n\n`;
+  } else if (projectTypes.has("Dart/Flutter")) {
+    // Note: Dart/Flutter doesn't have official Alpine images
+    dockerfile += `FROM dart:${languageVersion.replace("Dart ", "")}\n\n`;
+  } else {
+    dockerfile += "FROM alpine:latest\n\n";
+  }
+
+  // Install basic utilities
+  dockerfile += "RUN apk add --no-cache git\n\n";
+
+  // Set working directory
+  dockerfile += "WORKDIR /app\n\n";
+
+  // Clone the repository
+  //dockerfile += `# Clone the repository\n`;
+  // dockerfile += `RUN git clone ${repoUrl} .\n\n`;
+
+  // Install project-specific dependencies
+  if (projectTypes.has("Node.js")) {
+    dockerfile += "# Install Node.js dependencies\n";
+    dockerfile += "RUN npm install\n";
+    if (projectTypes.has("React Native") || projectTypes.has("Expo")) {
+      dockerfile += "RUN npm install -g expo-cli\n";
+    }
+  } else if (projectTypes.has("Python")) {
+    dockerfile += "# Install Python dependencies\n";
+    dockerfile += "RUN pip install -r requirements.txt\n";
+  } else if (projectTypes.has("Java") || projectTypes.has("Android")) {
+    if (projectTypes.has("Android")) {
+      dockerfile += "# Install Android SDK\n";
+      dockerfile += "RUN apk add --no-cache android-tools\n";
+    }
+    if (fs.existsSync("pom.xml")) {
+      dockerfile += "# Install Maven dependencies\n";
+      dockerfile += "RUN mvn install\n";
+    } else if (fs.existsSync("build.gradle")) {
+      dockerfile += "# Install Gradle dependencies\n";
+      dockerfile += "RUN gradle build\n";
+    }
+  } else if (projectTypes.has("Go")) {
+    dockerfile += "# Download Go dependencies\n";
+    dockerfile += "RUN go mod download\n";
+  } else if (projectTypes.has("Ruby")) {
+    dockerfile += "# Install Ruby dependencies\n";
+    dockerfile += "RUN bundle install\n";
+  } else if (projectTypes.has("PHP")) {
+    dockerfile += "# Install PHP dependencies\n";
+    dockerfile += "RUN composer install\n";
+  } else if (projectTypes.has(".NET")) {
+    dockerfile += "# Restore .NET dependencies\n";
+    dockerfile += "RUN dotnet restore\n";
+  } else if (projectTypes.has("Rust")) {
+    dockerfile += "# Build Rust project\n";
+    dockerfile += "RUN cargo build\n";
+  } else if (projectTypes.has("Swift") || projectTypes.has("iOS")) {
+    dockerfile += "# Resolve Swift package dependencies\n";
+    dockerfile += "RUN swift package resolve\n";
+  } else if (projectTypes.has("Dart/Flutter")) {
+    dockerfile += "# Get Flutter dependencies\n";
+    dockerfile += "RUN flutter pub get\n";
+  }
+  dockerfile += "\n";
+
+  // Expose ports
+  if (ports.size > 0) {
+    dockerfile += "# Expose ports\n";
+    ports.forEach((port) => {
+      dockerfile += `EXPOSE ${port}\n`;
+    });
+    dockerfile += "\n";
+  }
+
+  // Add notes as comments
+  if (notes) {
+    dockerfile += "# Notes:\n";
+    notes.split("\n").forEach((note) => {
+      if (note.trim()) {
+        dockerfile += `# ${note.trim()}\n`;
+      }
+    });
+    dockerfile += "\n";
+  }
+
+  // Create a script to generate .env file
+  dockerfile += "# Create script to generate .env file\n";
+  dockerfile += "RUN echo '#!/bin/sh' > /app/generate_env.sh && \\\n";
+  dockerfile +=
+    "    echo 'env | grep -v \"^_\" > .env' >> /app/generate_env.sh && \\\n";
+  dockerfile += "    chmod +x /app/generate_env.sh\n\n";
+
+  // Set the entrypoint
+  dockerfile += "# Set the entrypoint\n";
+  if (projectTypes.has("Node.js")) {
+    if (projectTypes.has("React Native") || projectTypes.has("Expo")) {
+      dockerfile +=
+        'ENTRYPOINT ["/bin/sh", "-c", "/app/generate_env.sh && expo start --web"]\n';
+    } else {
+      dockerfile +=
+        'ENTRYPOINT ["/bin/sh", "-c", "/app/generate_env.sh && npm start"]\n';
+    }
+  } else {
+    dockerfile +=
+      'ENTRYPOINT ["/bin/sh", "-c", "/app/generate_env.sh && echo \'Development environment is ready. Run your specific development commands here.\'"]\n';
+  }
+
+  return dockerfile;
+}
+
+interface ProjectAnalysis {
+  projectType: string[];
+  languageVersions: Record<string, string>;
+  dependencies: string[];
+  dockerfile: string;
+  osRequirements: string[];
+  ports: number[];
+  environmentVariables: string[];
+  notes: string;
+}
+
+export async function analyzeProjectAndGenerateDockerfile(
   files: Record<string, string>
-) {
+): Promise<ProjectAnalysis> {
   const {
     projectTypes,
     languageVersion,
@@ -452,217 +624,34 @@ export function generateDockerfile(
     osRequirements,
     environmentVariables,
     ports,
-  } = analysis;
-  let dockerfileContent = "";
-  let additionalNotes = ""; // Local variable to collect notes
-  const baseImages = {
-    "Node.js": "node",
-    Python: "python",
-    Java: "openjdk",
-    Ruby: "ruby",
-    PHP: "php",
-    Go: "golang",
-    ".NET": "mcr.microsoft.com/dotnet/sdk",
-    Rust: "rust",
-    "Dart/Flutter": "cirrusci/flutter",
-    Swift: "swift",
-  };
+    notes,
+  } = await analyzeProject(files);
 
-  if (projectTypes.length === 1) {
-    const projectType = projectTypes[0];
-    switch (projectType) {
-      case "Node.js":
-        {
-          // Extract the exact Node.js version
-          let nodeVersion =
-            languageVersion.replace("Node.js ", "").trim() || "latest";
+  const dockerfile = generateDockerfile(
+    projectTypes,
+    languageVersion,
+    dependencies,
+    osRequirements,
+    environmentVariables,
+    ports,
+    notes
+  );
 
-          // Clean version string
-          nodeVersion = nodeVersion.replace(/[^\d.]/g, "");
-          if (!nodeVersion) {
-            nodeVersion = "latest";
-          }
+  // Parse language and version
+  const [language, version] = languageVersion.split(" ");
 
-          const baseImage = `${baseImages["Node.js"]}:${nodeVersion}-alpine`;
-
-          dockerfileContent += `FROM ${baseImage}\n`;
-          dockerfileContent += "WORKDIR /app\n";
-
-          // Copy package.json and lock files
-          dockerfileContent += "COPY package*.json ./\n";
-          if (files["yarn.lock"]) {
-            dockerfileContent += "COPY yarn.lock ./\n";
-          } else if (files["package-lock.json"]) {
-            dockerfileContent += "COPY package-lock.json ./\n";
-          } else if (files["pnpm-lock.yaml"]) {
-            dockerfileContent += "COPY pnpm-lock.yaml ./\n";
-          }
-
-          // Install dependencies using the exact versions from lock files
-          if (files["yarn.lock"]) {
-            dockerfileContent += "RUN yarn install --frozen-lockfile\n";
-          } else if (files["pnpm-lock.yaml"]) {
-            dockerfileContent +=
-              "RUN npm install -g pnpm && pnpm install --frozen-lockfile\n";
-          } else {
-            dockerfileContent += "RUN npm ci\n";
-          }
-
-          dockerfileContent += "COPY . .\n";
-
-          if (
-            projectTypes.includes("React") ||
-            projectTypes.includes("Next.js")
-          ) {
-            dockerfileContent += "\n# Build the frontend\n";
-            if (files["yarn.lock"]) {
-              dockerfileContent += "RUN yarn build\n";
-            } else if (files["pnpm-lock.yaml"]) {
-              dockerfileContent += "RUN pnpm run build\n";
-            } else {
-              dockerfileContent += "RUN npm run build\n";
-            }
-          }
-
-          ports.forEach((port) => {
-            dockerfileContent += `EXPOSE ${port}\n`;
-          });
-
-          if (projectTypes.includes("Next.js")) {
-            dockerfileContent += 'CMD ["npm", "start"]\n';
-          } else if (
-            projectTypes.includes("React Native") ||
-            projectTypes.includes("Expo")
-          ) {
-            additionalNotes +=
-              "Building React Native and Expo apps requires additional setup and may not fully work in Docker.\n";
-            dockerfileContent += 'CMD ["npm", "start"]\n';
-          } else {
-            dockerfileContent += 'CMD ["node", "index.js"]\n';
-          }
-        }
-        break;
-
-      case "Python":
-        {
-          // Extract the exact Python version
-          let pythonVersion =
-            languageVersion.replace("Python ", "").trim() || "latest";
-
-          const baseImage = `${baseImages["Python"]}:${pythonVersion}-slim`;
-
-          dockerfileContent += `FROM ${baseImage}\n`;
-          dockerfileContent += "WORKDIR /app\n";
-
-          if (files["requirements.txt"]) {
-            dockerfileContent += "COPY requirements.txt ./\n";
-            dockerfileContent +=
-              "RUN pip install --no-cache-dir -r requirements.txt\n";
-          } else if (files["Pipfile"]) {
-            dockerfileContent += "COPY Pipfile* ./\n";
-            dockerfileContent +=
-              "RUN pip install pipenv && pipenv install --system --deploy\n";
-          } else if (files["pyproject.toml"]) {
-            dockerfileContent += "COPY pyproject.toml poetry.lock ./\n";
-            dockerfileContent +=
-              "RUN pip install poetry && poetry install --no-dev --no-interaction --no-ansi\n";
-          }
-
-          dockerfileContent += "COPY . .\n";
-
-          ports.forEach((port) => {
-            dockerfileContent += `EXPOSE ${port}\n`;
-          });
-
-          dockerfileContent += 'CMD ["python", "app.py"]\n';
-        }
-        break;
-
-      case "Swift":
-        {
-          let swiftVersion =
-            languageVersion.replace("Swift ", "").trim() || "latest";
-          const baseImage = `${baseImages["Swift"]}:${swiftVersion}`;
-
-          dockerfileContent += `FROM ${baseImage}\n`;
-          dockerfileContent += "WORKDIR /app\n";
-
-          if (files["Package.swift"]) {
-            dockerfileContent += "COPY Package.swift ./\n";
-            dockerfileContent += "RUN swift package resolve\n";
-          }
-
-          dockerfileContent += "COPY . .\n";
-
-          dockerfileContent += 'CMD ["swift", "run"]\n';
-        }
-        break;
-
-      case "Android":
-        {
-          const baseImage = "openjdk:8-jdk";
-
-          dockerfileContent += `FROM ${baseImage}\n`;
-          dockerfileContent += "WORKDIR /app\n";
-          dockerfileContent += "# Install Android SDK\n";
-          dockerfileContent +=
-            "RUN apt-get update && apt-get install -y wget unzip && rm -rf /var/lib/apt/lists/*\n";
-          dockerfileContent +=
-            "RUN wget https://dl.google.com/android/repository/commandlinetools-linux-6609375_latest.zip -O commandlinetools.zip \\\n";
-          dockerfileContent += "  && mkdir -p /android-sdk/cmdline-tools \\\n";
-          dockerfileContent +=
-            "  && unzip commandlinetools.zip -d /android-sdk/cmdline-tools \\\n";
-          dockerfileContent += "  && rm commandlinetools.zip\n";
-          dockerfileContent += "ENV ANDROID_HOME /android-sdk\n";
-          dockerfileContent +=
-            "ENV PATH $PATH:$ANDROID_HOME/cmdline-tools/tools/bin:$ANDROID_HOME/platform-tools\n";
-          dockerfileContent += "RUN yes | sdkmanager --licenses\n";
-          dockerfileContent +=
-            'RUN sdkmanager "platform-tools" "platforms;android-28" "build-tools;28.0.3"\n';
-          dockerfileContent += "COPY . .\n";
-          dockerfileContent += "RUN ./gradlew build\n";
-          additionalNotes +=
-            "Note: Android projects require Android SDK and build tools.\n";
-        }
-        break;
-
-      case "iOS":
-        {
-          additionalNotes +=
-            "iOS projects require macOS to build and cannot be built in Docker containers on non-macOS hosts.\n";
-        }
-        break;
-
-      default:
-        additionalNotes += `No Dockerfile template available for project type: ${projectType}\n`;
-        break;
-    }
-  } else {
-    // Handle multiple project types
-    additionalNotes +=
-      "Multiple project types detected. Consider using Docker Compose or separate Dockerfiles for each service.\n";
-  }
-
-  return { dockerfileContent: dockerfileContent.trim(), additionalNotes };
-}
-
-export async function generateOutput(
-  analysis: Awaited<ReturnType<typeof analyzeProject>>,
-  dockerfileResult: ReturnType<typeof generateDockerfile>
-) {
-  const combinedNotes = [analysis.notes, dockerfileResult.additionalNotes]
-    .filter(Boolean)
-    .join("\n");
-
-  console.log(dockerfileResult);
   return {
-    projectType: analysis.projectTypes,
-    languageVersion: analysis.languageVersion,
-    dependencies: analysis.dependencies,
-    dockerfile: dockerfileResult.dockerfileContent,
-    osRequirements: analysis.osRequirements,
-    ports: analysis.ports,
-    environmentVariables: analysis.environmentVariables,
-    notes: combinedNotes,
+    projectType: Array.from(projectTypes),
+    languageVersions: { [language]: version },
+    dependencies: Array.from(dependencies),
+    dockerfile: dockerfile,
+    osRequirements: Array.from(osRequirements),
+    ports: Array.from(ports),
+    environmentVariables: Array.from(environmentVariables),
+    notes: notes,
   };
 }
+// Usage example:
+// const files = await readRepopack("path/to/repopack.txt");
+// const dockerfile = await analyzeProjectAndGenerateDockerfile(files);
+// console.log(dockerfile);

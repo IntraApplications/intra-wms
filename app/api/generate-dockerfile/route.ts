@@ -1,49 +1,50 @@
-// app/api/claude-analyze/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import OpenAI from "openai";
-import Anthropic from "@anthropic-ai/sdk";
 import { githubApp } from "@/lib/github";
 import { createClient } from "@/lib/supabase/supabase-server";
-import fs from "fs";
-import { prompt } from "./prompt";
+import {
+  analyzeProject,
+  analyzeProjectAndGenerateDockerfile,
+  generateDockerfile,
+  generateOutput,
+  readRepopack,
+} from "./gen-algorithm";
 
-import { promisify } from "util";
+// Commented out AI-related imports
+// import OpenAI from "openai";
+// import Anthropic from "@anthropic-ai/sdk";
+// import { prompt } from "./prompt";
 
-const readFile = promisify(fs.readFile);
+function parseRepopackContent(content: string): Record<string, string> {
+  const files: Record<string, string> = {};
+  const fileRegex =
+    /={15,}\s*File:\s*(.*?)\s*={15,}\s*([\s\S]*?)(?=(?:\n={15,}\s*File:|\s*$))/g;
+  let match;
 
-function generateGithubUrlWithToken(repoUrl, token) {
-  // Extract the owner and repo name from the given GitHub URL
-  const urlParts = repoUrl.match(/github\.com\/([^\/]+)\/([^\/]+)\.git/);
-  if (!urlParts || urlParts.length < 3) {
-    throw new Error("Invalid GitHub repository URL");
+  while ((match = fileRegex.exec(content)) !== null) {
+    const filePath = match[1].trim();
+    const fileContent = match[2].trim();
+    files[filePath] = fileContent;
   }
 
-  const owner = urlParts[1];
-  const repo = urlParts[2];
-
-  // Construct the full GitHub URL with the token
-  const cloneUrlWithToken = `https://x-access-token:${token}@github.com/${owner.toLowerCase()}/${repo.toLowerCase()}.git`;
-  return cloneUrlWithToken;
+  return files;
 }
 
-// Output: https://x-access-token:ghp_1234567890abcdefghij@github.com/IntraApplications/intra-websocket-hub.git
+// Commented out AI-related initialization
+// const anthropic = new Anthropic({
+//   apiKey: process.env.NEXT_PUBLIC_CLAUDE_API_KEY,
+// });
 
-const anthropic = new Anthropic({
-  apiKey: process.env.NEXT_PUBLIC_CLAUDE_API_KEY,
-});
+// const openai = new OpenAI({
+//   apiKey: process.env.NEXT_PUBLIC_OPENAI_API_KEY,
+// });
 
-const openai = new OpenAI({
-  apiKey: process.env.NEXT_PUBLIC_OPENAI_API_KEY,
-});
-
-// Function to remove comments from JSON-like string
-const removeComments = (jsonString: string) => {
-  // Remove single-line (//) and multi-line (/* */) comments
-  return jsonString
-    .replace(/\/\/.*$/gm, "")
-    .replace(/\/\*[\s\S]*?\*\//g, "")
-    .trim();
-};
+// Commented out function to remove comments from JSON-like string
+// const removeComments = (jsonString: string) => {
+//   return jsonString
+//     .replace(/\/\/.*$/gm, "")
+//     .replace(/\/\*[\s\S]*?\*\//g, "")
+//     .trim();
+// };
 
 export async function POST(request: NextRequest) {
   const { repositoryURL, mergedRepositoryFile } = await request.json();
@@ -59,7 +60,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Get the workspace data
     const { data: workspaceData, error: workspaceError } = await supabase
       .from("workspaces")
       .select("id, github_app_installation_id, github_org_name")
@@ -73,8 +73,6 @@ export async function POST(request: NextRequest) {
     }
 
     const installationId = workspaceData.github_app_installation_id;
-
-    // Get an Octokit instance for this installation
     const octokit = await githubApp.getInstallationOctokit(
       Number(installationId)
     );
@@ -83,12 +81,22 @@ export async function POST(request: NextRequest) {
       type: "installation",
     });
 
-    console.log(auth.token); // The installation token
+    const files = await readRepopack(mergedRepositoryFile);
+    const dockerfile = await analyzeProjectAndGenerateDockerfile(files);
 
+    console.log("TESTFDSF");
+    console.log(dockerfile);
+
+    // Add the remote repository URL to the Dockerfile
+
+    return NextResponse.json(dockerfile);
+
+    // Commented out AI-based analysis
+    /*
     const msg = await anthropic.messages.create({
       model: "claude-3-5-sonnet-20240620",
       max_tokens: 8192,
-      temperature: 0,
+      temperature: 0.2,
       system: prompt,
       messages: [
         {
@@ -100,93 +108,32 @@ export async function POST(request: NextRequest) {
               also we are downloading the repo from the remote ${generateGithubUrlWithToken(
                 repositoryURL,
                 auth.token
-              )} into the docker image, 
-              rather then downloading from the path. so include this remote download in the docker file, and not the current directory`,
-              // THIS prompt is effective for generating a docker file, and building the repo contents from a remote repo, rather
-              // then storing it locally in a temp file
+              )}
+               into the docker image, 
+              rather then downloading from the path. so include this remote download in the docker file, and not the current directory
+
+              Additionally, include the following in the Dockerfile to handle environment variables:
+                1.  RUN echo '#!/bin/sh' > /app/generate_env.sh && \
+                    echo 'env | grep INTRA_ > .env' >> /app/generate_env.sh && \
+                    chmod +x /app/generate_env.sh
+  
+                2.  Set the entrypoint to run this script before starting the application:
+                    ENTRYPOINT ["/bin/sh", "-c", "/app/generate_env.sh && {start_command}"]
+
+              NOTE run the app in dev mode, for example, if its a next app, use 'npm run dev' not 'npm start'.
+              run dev mode application types. springboot, nextjs, express, etc.
+              Note, PARSE ALL ENVIRONMENT VARIABLES, AND KEEP THEM AS IT, DO NOT ADD INTRA_ TO THE BEGINNING OF THEM, AS THIS WILL BE DONE IN THE CODE,`,
             },
           ],
         },
       ],
     });
 
-    /*
-    const assistant = await openai.beta.assistants.create({
-      name: "Code analyzer",
-      instructions: prompt,
-      model: "gpt-4o",
-      temperature: 0.2,
-      top_p: 0.95,
-    });
-
-    const fileUpload = await openai.files.create({
-      file: fs.createReadStream(outputFilePath),
-      purpose: "assistants",
-    });
-
-    const thread = await openai.beta.threads.create({
-      messages: [
-        {
-          role: "user",
-          content: prompt,
-          attachments: [
-            { file_id: fileUpload.id, tools: [{ type: "file_search" }] },
-          ],
-        },
-      ],
-    });
-
-    const run = await openai.beta.threads.runs.createAndPoll(thread.id, {
-      assistant_id: assistant.id,
-    });
-
-    const messages = await openai.beta.threads.messages.list(thread.id, {
-      run_id: run.id,
-    });
-
-    const message = messages.data.pop();
-    let responseContent = "";
-
-    if (message && message.content[0].type === "text") {
-      const { text } = message.content[0];
-      responseContent = text.value;
-
-      // Remove code blocks
-      responseContent = responseContent.replace(/```json([\s\S]*?)```/g, "$1");
-      responseContent = responseContent.replace(/```([\s\S]*?)```/g, "$1");
-
-      // Remove comments from the JSON
-      responseContent = removeComments(responseContent);
-
-      // Extract JSON content
-      const jsonStartIndex = responseContent.indexOf("{");
-      const jsonEndIndex = responseContent.lastIndexOf("}");
-      if (jsonStartIndex !== -1 && jsonEndIndex !== -1) {
-        responseContent = responseContent.slice(
-          jsonStartIndex,
-          jsonEndIndex + 1
-        );
-      } else {
-        throw new Error("No valid JSON object found in the response.");
-      }
-
-      // Parse the JSON content
-      let analysisData;
-      try {
-        analysisData = JSON.parse(responseContent);
-      } catch (parseError) {
-        console.error("JSON parsing error:", parseError);
-        console.error("Response content:", responseContent);
-        throw new Error("Failed to parse JSON response from assistant.");
-      }
-          */
-
     let analysisData;
     if (msg.content[0].type === "text") {
       const responseContent = msg.content[0].text;
       console.log("Claude's response:", responseContent);
 
-      // Function to find and parse the first valid JSON object in the string
       const findAndParseJSON = (str) => {
         const regex = /\{(?:[^{}]|\{(?:[^{}]|\{[^{}]*\})*\})*\}/g;
         const matches = str.match(regex);
@@ -196,7 +143,6 @@ export async function POST(request: NextRequest) {
               return JSON.parse(match);
             } catch (e) {
               console.log("Failed to parse JSON:", match);
-              // Continue to the next match if parsing fails
             }
           }
         }
@@ -216,6 +162,7 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json(analysisData);
+    */
   } catch (error) {
     console.error("Error in analysis:", error);
     return NextResponse.json(

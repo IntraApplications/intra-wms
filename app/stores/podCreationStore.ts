@@ -1,11 +1,16 @@
 import { createStore } from "zustand/vanilla";
 
+export type EnvironmentVariable = {
+  key: string;
+  value: string;
+};
+
 export type EnvironmentAnalysisData = {
   notes: string;
   projectType: string;
   languageVersion: string;
   dependencies: string[];
-  environmentVariables: string[];
+  environmentVariables: EnvironmentVariable[];
   dockerfile: string;
   startupCommands: string[];
   ports: number[];
@@ -15,14 +20,14 @@ export type PodCreationState = {
   vcs: string;
   repositoryName: string;
   repositoryURL: string;
-  repoDir: string;
+  repositoryDir: string;
   environmentAnalysis: EnvironmentAnalysisData;
 };
 
 export type PodCreationActions = {
   setVCS: (vcs: string) => void;
   setRepositoryName: (name: string) => void;
-  setRepoDir: (dir: string) => void;
+  setRepositoryDir: (dir: string) => void;
   setRepositoryURL: (url: string) => void;
   setEnvironmentAnalysis: (data: Partial<EnvironmentAnalysisData>) => void;
   reset: () => void;
@@ -33,7 +38,7 @@ export type PodCreationStore = PodCreationState & PodCreationActions;
 const initialState: PodCreationState = {
   vcs: "",
   repositoryName: "",
-  repoDir: "",
+  repositoryDir: "",
   repositoryURL: "",
   environmentAnalysis: {
     notes: "",
@@ -52,7 +57,7 @@ export const createPodCreationStore = () =>
     ...initialState,
     setVCS: (vcs) => set({ vcs }),
     setRepositoryName: (repositoryName) => set({ repositoryName }),
-    setRepoDir: (repoDir) => set({ repoDir }),
+    setRepositoryDir: (repositoryDir) => set({ repositoryDir }),
     setRepositoryURL: (repositoryURL) => set({ repositoryURL }),
     setEnvironmentAnalysis: (data) =>
       set((state) => ({

@@ -2,71 +2,6 @@ export const prompt = `
 ### Instructions:
 
 1. **Comprehensive Project Analysis**:
-   - Examine all files and directories in the project to identify all programming languages, frameworks, libraries, and tools used.
-   - Detect if the project uses multiple frameworks or languages (e.g., a Java Spring Boot backend with a React frontend or an Electron application combining Node.js and Chromium).
-   - Avoid truncating any output after encountering "https://" or other URL-like patterns. Ensure that complete URLs and paths are maintained in their entirety.
-
-2. **Configuration Files**:
-   - Analyze build and configuration files like \`webpack.config.js\`, \`babel.config.js\`, \`tsconfig.json\`, \`Dockerfile\`, \`Makefile\`, \`android/app/build.gradle\`, \`ios/Podfile\`, and CI/CD pipelines.
-   - Identify any platform-specific files or configurations.
-
-3. **Dependency and Version Extraction**:
-   - Extract all dependencies and their exact versions, including devDependencies and peerDependencies where applicable.
-   - Avoid breaking long dependency URLs, paths, or configuration lines. Ensure that no part of a URL or path is cut off.
-
-4. **Dockerfile Creation**:
-   - Create a Dockerfile that replicates the necessary environment to build and run the application successfully.
-   - Use multi-stage builds to optimize the final image size by separating build-time and runtime dependencies.
-   - **Do not truncate** any long strings or URLs in the Dockerfile. Ensure that complete URLs (e.g., \`https://\`, \`wget https://\`) and file paths are maintained in full.
-
-5. **Environment and External Dependencies**:
-   - Identify all environment variables required by the application without exposing sensitive data.
-   - Ensure no environment variable declarations or paths (e.g., for SDKs or tools) are broken or truncated.
-
-6. **Structured JSON Output**:
-   - Present all findings and the Dockerfile in the following JSON format:
-   
-     \`\`\`json
-     {
-       "projectType": ["Framework1", "Framework2"],
-       "languageVersions": {
-         "Language1": "Version",
-         "Language2": "Version"
-       },
-       "dependencies": [
-         "dependency1@version",
-         "dependency2@version"
-       ],
-       "dockerfile": "this is where the Dockerfile content goes",
-       "osRequirements": ["OS or Distribution", "System Packages"],
-       "ports": [portNumber1, portNumber2],
-       "environmentVariables": ["VARIABLE_NAME1", "VARIABLE_NAME2"],
-       "notes": "Additional notes, recommendations, or special instructions."
-     }
-     \`\`\`
-
-   - Ensure that the \`"dockerfile"\` field contains the full content of the Dockerfile, **without truncation**, especially after encountering URLs like \`https://\`.
-
-7. **Validation and Error Checking**:
-   - Check for conflicting dependencies or version mismatches.
-   - Ensure that the Dockerfile commands correspond to the identified project types and dependencies.
-   - Do not truncate any part of the output, including URLs, paths, and file names.
-
-### Additional Considerations:
-- **Multi-Service Applications**: If the project consists of multiple services, suggest using Docker Compose or Kubernetes for orchestrating multiple containers.
-- **Platform-Specific Instructions**: Provide configurations needed to build and run mobile or desktop applications within a container, and ensure that no part of any path or command is truncated.
-
-### Important Notes:
-- **Accuracy and Completeness**: Ensure that each field is detailed and accurately reflects the project’s requirements. Avoid cutting off important sections of the response, such as URLs, paths, or configuration lines.
-- **Security Best Practices**: Avoid copying sensitive files like \`.env\` into the Docker image.
-
----
-
-**Updated Prompt:**
-
----
-
-1. **Comprehensive Project Analysis**:
 
    - **Framework and Technology Identification**:
      - Examine all files and directories in the project to identify all programming languages, frameworks, libraries, and tools used.
@@ -148,19 +83,20 @@ export const prompt = `
          "dependency1@version",
          "dependency2@version",
        ],
-       "dockerfile": "this is where the docker document content goes",
+       "dockerfile": "this is where the docker document content goes MAKE SURE THE FORMATTING IS GOOD FOR JSON AND IT GOES ALL ON ONE LINE WITH \n instead of multiple whitespace lines in the string",
        "osRequirements": ["OS or Distribution", "System Packages"],
        "ports": [portNumber1, portNumber2],
        "environmentVariables": ["VARIABLE_NAME1", "VARIABLE_NAME2"],
        "notes": "Additional notes, recommendations, or special instructions."
      }
-     
+
 
    - **Comprehensive and Accurate Content**:
      - Ensure that each field is detailed and accurately reflects the project's requirements.
      - The \`"dockerfile"\` field should contain the full content of the Dockerfile, properly formatted.
      - For multi-service applications, provide Dockerfiles for each service if applicable.
 
+     
 7. **Validation and Error Checking**:
 
    - **Consistency Verification**:

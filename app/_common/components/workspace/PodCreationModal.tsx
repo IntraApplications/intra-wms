@@ -3,7 +3,7 @@ import Button from "@/_common/components/Button";
 import ProgressDots from "@/_common/components/ProgressDots";
 import VCSSelection from "./steps/VCSSelection";
 import RepositorySelection from "./steps/RepositorySelection";
-import EnvironmentSetup from "./steps/WorkspaceInitializer";
+import EnvironmentSetup from "./steps/PodInitializer";
 import Configuration from "./steps/Configuration";
 import ReviewSetup from "./steps/ReviewSetup";
 import LoadingPage from "./steps/LoadingPage";

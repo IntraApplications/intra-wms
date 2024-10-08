@@ -35,7 +35,7 @@ export function useGenerateDockerfile() {
       showNotification({
         type: "error",
         title: "Error creating dockerfile",
-        message: error,
+        message: error.message,
       });
     },
   });

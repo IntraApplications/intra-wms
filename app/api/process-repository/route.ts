@@ -27,16 +27,103 @@ export async function POST(request: NextRequest) {
 
     // Define the output file path
     // Define ignore patterns
-    const includePatterns = `
-  package.json,yarn.lock,pnpm-lock.yaml,.babelrc,tsconfig.json,metro.config.js,app.json,expo.json,android/app/build.gradle,ios/Podfile,index.js,App.js,requirements.txt,Pipfile,pyproject.toml,tox.ini,setup.py,wsgi.py,go.mod,go.sum,Cargo.toml,Cargo.lock,composer.json,composer.lock,build.gradle,settings.gradle,pom.xml,mvnw,mvnw.cmd,.mvn/wrapper/maven-wrapper.properties,src/main/resources/application.yml,src/main/resources/application.properties,src/main/resources/logback.xml,Dockerfile,docker-compose.yml,.dockerignore,.env,.env.production,.env.development,.env.local,.env.test,.gitlab-ci.yml,.travis.yml,circle.yml,Jenkinsfile,.github/workflows/*.yml,terraform.tf,terraform.tfvars,terragrunt.hcl,cloudformation.yml,cloudformation.json,nx.json,lerna.json,next.config.js,gatsby-config.js,vue.config.js,nuxt.config.js,angular.json,capacitor.config.json,Makefile,CMakeLists.txt,webpack.config.js,rollup.config.js,vite.config.js
-    `;
 
-    // Run repopack and capture the output
-    const { stderr } = await execAsync(
-      `npx repopack --remote ${repositoryURL} --output repopack-output.xml --include "${includePatterns}"`,
+    const ignorePatterns = [
+      // Logs
+      "**/*.log",
+
+      ".tamagui/",
+
+      "assets/animations/test.json",
+
+      "tamagui-web.css",
+
+      // Temporary files and directories
+      "tmp/",
+      "temp/",
+
+      // Build outputs
+      "build/",
+      "dist/",
+      "out/",
+      "web-build/",
+
+      // Dependency directories
+      "node_modules/",
+      "bower_components/",
+      "jspm_packages/",
+      "vendor/",
+
+      // Version control
+      ".git/",
+      ".svn/",
+      ".hg/",
+
+      // IDE and editor files
+      ".vscode/",
+      ".idea/",
+      "*.sublime-*",
+
+      // OS generated files
+      ".DS_Store",
+      "Thumbs.db",
+
+      // Test coverage output
+      "coverage/",
+
+      // Yarn and npm files
+      ".yarn/",
+      ".npm/",
+      "yarn-error.log",
+      "npm-debug.log",
+
+      // Environment and secret files
+      ".env",
+      ".env.local",
+      ".env.*.local",
+
+      // Expo specific
+      ".expo/",
+      ".expo-shared/",
+      "*.jks",
+      "*.p8",
+      "*.p12",
+      "*.key",
+      "*.mobileprovision",
+      "*.orig.*",
+
+      // Android specific
+      "android/",
+
+      // iOS specific
+      "ios/",
+
+      // Large asset files
+      "**/*.mp4",
+      "**/*.tiff",
+      "**/*.avi",
+      "**/*.flv",
+      "**/*.mov",
+      "**/*.wmv",
+
+      // Miscellaneous
+      "*.bak",
+      "*.swp",
+      "*.swo",
+      "__tests__/",
+      "test/",
+      "tests/",
+      "doc/",
+      "docs/",
+    ].join(",");
+
+    // Run repopack with the ignore patterns
+    const { stdout, stderr } = await execAsync(
+      `npx repopack --remote ${repositoryURL} --output repopack-output.xml --ignore "${ignorePatterns}"`,
       { cwd: tempDir }
     );
-
+    console.log("TESFDFDSFDSFSDFSDF");
+    console.log(stdout);
     if (stderr) {
       return NextResponse.json(
         {

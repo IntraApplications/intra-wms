@@ -13,14 +13,24 @@ function useCreatePod() {
 
   const createPod = useMutation({
     mutationFn: async (data: PodCreationState) => {
-      const { repositoryName, environmentAnalysis } = data;
+      const { repositoryName, repositoryURL, environmentAnalysis } = data;
 
       return new Promise((resolve, reject) => {
-        const eventSource = new EventSource(
-          `/api/push-to-ghcr?dockerfileContent=${encodeURIComponent(
-            environmentAnalysis.dockerfile
-          )}&repositoryName=${encodeURIComponent(repositoryName)}`
+        const params = new URLSearchParams();
+
+        params.append("dockerfileContent", environmentAnalysis.dockerfile);
+        params.append("repositoryName", repositoryName);
+        params.append("repositoryURL", repositoryURL);
+        params.append(
+          "environmentVariables",
+          JSON.stringify(environmentAnalysis.environmentVariables)
         );
+
+        // Construct the full API URL with query parameters
+        const apiUrl = `/api/push-to-ghcr?${params.toString()}`;
+
+        // Initialize the EventSource with the constructed URL
+        const eventSource = new EventSource(apiUrl);
 
         eventSource.onmessage = (event) => {
           try {
