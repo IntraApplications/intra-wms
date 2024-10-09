@@ -319,7 +319,10 @@ export async function GET(request: NextRequest) {
 
         const buildArgs: string[] = [];
         for (const envVar of environmentVariables) {
-          buildArgs.push("--build-arg", "INTRA_" + envVar); // envVar is already in "KEY=VALUE" format
+          const [key, value] = envVar.split("=");
+          // Use single quotes to wrap the value and escape any single quotes in the value
+          const escapedValue = value?.replace(/'/g, "'\\''") ?? "";
+          buildArgs.push("--build-arg", `INTRA_${key}='${escapedValue}'`);
         }
 
         await executeCommand(

@@ -160,92 +160,127 @@ const WorkspacePage = () => {
               />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {filteredWorkspaces.map((workspace) => (
-                <div
-                  key={workspace.id}
-                  className="bg-dashboard border border-border rounded-[5px] p-3 flex flex-col justify-between transition-colors duration-300 hover:border-accent"
-                >
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <h3 className="text-white text-xs font-semibold truncate mr-2">
-                        {workspace.name}
-                      </h3>
-                      <MoreHorizontal
-                        className="text-gray-400 cursor-pointer flex-shrink-0"
-                        size={16}
-                      />
-                    </div>
-                    <p className="text-gray-400 text-[10px] mb-1 truncate">
-                      {workspace.repo}
-                    </p>
-                    <div className="flex items-center space-x-2 text-[10px] mb-1">
-                      <span className="flex items-center text-gray-400">
-                        <GitBranch size={12} className="mr-0.5" />
-                        {workspace.branch}
-                      </span>
-                      <span className="flex items-center text-gray-400">
-                        <Code size={12} className="mr-0.5" />
-                        {workspace.changes}{" "}
-                        {workspace.changes === 1 ? "change" : "changes"}
-                      </span>
-                      <span className="flex items-center text-gray-400">
-                        <Clock size={12} className="mr-0.5" />
-                        {workspace.lastActive}
-                      </span>
-                    </div>
-                    <div className="flex items-center space-x-2 text-[10px]">
-                      <span className="flex items-center text-gray-400">
-                        <Activity
-                          className={`${getActivityColor(
-                            workspace.activity
-                          )} mr-0.5`}
-                          size={12}
-                        />
-                        {workspace.activity}
-                      </span>
-                      <span className="flex items-center text-gray-400">
-                        <Users size={12} className="mr-0.5" />
-                        {workspace.collaborators}
-                      </span>
-                      <span className="flex items-center text-gray-400">
-                        <HardDrive size={12} className="mr-0.5" />
-                        {workspace.diskUsage}
-                      </span>
-                      <span className="flex items-center text-gray-400">
-                        <Cpu size={12} className="mr-0.5" />
-                        {workspace.cpuUsage}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex justify-between items-center mt-2">
-                    <span
-                      className={`flex items-center text-[10px] ${
-                        workspace.status === "active"
-                          ? "text-green-500"
-                          : "text-gray-400"
-                      }`}
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="text-left text-gray-400 text-xs border-b border-border">
+                    <th className="pb-3 font-normal">Name</th>
+                    <th className="pb-3 font-normal">Branch</th>
+                    <th className="pb-3 font-normal">Changes</th>
+                    <th className="pb-3 font-normal">Last Active</th>
+                    <th className="pb-3 font-normal">Activity</th>
+                    <th className="pb-3 font-normal">Collaborators</th>
+                    <th className="pb-3 font-normal">Disk Usage</th>
+                    <th className="pb-3 font-normal">CPU Usage</th>
+                    <th className="pb-3 font-normal">Status</th>
+                    <th className="pb-3 font-normal">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredWorkspaces.map((workspace) => (
+                    <tr
+                      key={workspace.id}
+                      className="border-b border-border hover:bg-dashboard transition-colors duration-200"
                     >
-                      <span
-                        className={`w-1.5 h-1.5 ${
-                          workspace.status === "active"
-                            ? "bg-green-500"
-                            : "bg-gray-400"
-                        } rounded-full mr-1`}
-                      ></span>
-                      {workspace.status === "active" ? "Active" : "Stopped"}
-                    </span>
-                    <Button
-                      text={workspace.status === "active" ? "Stop" : "Start"}
-                      type="button"
-                      colorType={
-                        workspace.status === "active" ? "danger" : "secondary"
-                      }
-                      size="xxs"
-                    />
-                  </div>
-                </div>
-              ))}
+                      <td className="py-4">
+                        <div>
+                          <p className="text-white text-sm font-semibold truncate">
+                            {workspace.name}
+                          </p>
+                          <p className="text-gray-400 text-xs truncate">
+                            {workspace.repo}
+                          </p>
+                        </div>
+                      </td>
+                      <td className="py-4">
+                        <span className="flex items-center text-gray-400 text-xs">
+                          <GitBranch size={14} className="mr-1" />
+                          {workspace.branch}
+                        </span>
+                      </td>
+                      <td className="py-4">
+                        <span className="flex items-center text-gray-400 text-xs">
+                          <Code size={14} className="mr-1" />
+                          {workspace.changes}
+                        </span>
+                      </td>
+                      <td className="py-4">
+                        <span className="flex items-center text-gray-400 text-xs">
+                          <Clock size={14} className="mr-1" />
+                          {workspace.lastActive}
+                        </span>
+                      </td>
+                      <td className="py-4">
+                        <span className="flex items-center text-xs">
+                          <Activity
+                            className={`${getActivityColor(
+                              workspace.activity
+                            )} mr-1`}
+                            size={14}
+                          />
+                          {workspace.activity}
+                        </span>
+                      </td>
+                      <td className="py-4">
+                        <span className="flex items-center text-gray-400 text-xs">
+                          <Users size={14} className="mr-1" />
+                          {workspace.collaborators}
+                        </span>
+                      </td>
+                      <td className="py-4">
+                        <span className="flex items-center text-gray-400 text-xs">
+                          <HardDrive size={14} className="mr-1" />
+                          {workspace.diskUsage}
+                        </span>
+                      </td>
+                      <td className="py-4">
+                        <span className="flex items-center text-gray-400 text-xs">
+                          <Cpu size={14} className="mr-1" />
+                          {workspace.cpuUsage}
+                        </span>
+                      </td>
+                      <td className="py-4">
+                        <span
+                          className={`flex items-center text-xs ${
+                            workspace.status === "active"
+                              ? "text-green-500"
+                              : "text-gray-400"
+                          }`}
+                        >
+                          <span
+                            className={`w-2 h-2 ${
+                              workspace.status === "active"
+                                ? "bg-green-500"
+                                : "bg-gray-400"
+                            } rounded-full mr-1`}
+                          ></span>
+                          {workspace.status === "active" ? "Active" : "Stopped"}
+                        </span>
+                      </td>
+                      <td className="py-4">
+                        <div className="flex items-center space-x-2">
+                          <Button
+                            text={
+                              workspace.status === "active" ? "Stop" : "Start"
+                            }
+                            type="button"
+                            colorType={
+                              workspace.status === "active"
+                                ? "danger"
+                                : "secondary"
+                            }
+                            size="xs"
+                          />
+                          <MoreHorizontal
+                            className="text-gray-400 cursor-pointer"
+                            size={18}
+                          />
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </>
         ) : (

@@ -2,10 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { githubApp } from "@/lib/github";
 import { createClient } from "@/lib/supabase/supabase-server";
 import {
-  analyzeProject,
   analyzeProjectAndGenerateDockerfile,
-  generateDockerfile,
-  generateOutput,
   readRepopack,
 } from "./gen-algorithm";
 
@@ -83,9 +80,6 @@ export async function POST(request: NextRequest) {
 
     const files = await readRepopack(mergedRepositoryFile);
     const dockerfile = await analyzeProjectAndGenerateDockerfile(files);
-
-    console.log("TESTFDSF");
-    console.log(dockerfile);
 
     // Add the remote repository URL to the Dockerfile
 
