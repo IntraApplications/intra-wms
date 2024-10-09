@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useCallback } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faGithub,
@@ -10,7 +10,19 @@ import Button from "@/_common/components/Button";
 import { useGitHubIntegration } from "@/hooks/useGitHubIntegration";
 import { usePodCreationStore } from "@/contexts/PodCreationStoreContext";
 
-const vcsOptions = [
+/**
+ * Interface for VCS options.
+ */
+interface VCSOption {
+  name: string;
+  icon: any; // Replace 'any' with the appropriate type if possible
+  description: string;
+}
+
+/**
+ * VCS options available.
+ */
+const vcsOptions: VCSOption[] = [
   {
     name: "GitHub",
     icon: faGithub,
@@ -37,7 +49,10 @@ const vcsOptions = [
   },
 ];
 
-const VCSOptionSkeleton = React.memo(() => (
+/**
+ * Skeleton component for loading state.
+ */
+const VCSOptionSkeleton: React.FC = React.memo(() => (
   <div className="bg-dashboard border border-border rounded-[5px] p-4 flex flex-col justify-between overflow-hidden">
     <div>
       <div className="flex items-center mb-2">
@@ -77,15 +92,28 @@ const VCSOptionSkeleton = React.memo(() => (
   </div>
 ));
 
+/**
+ * Props for the VCSSelection component.
+ */
 interface VCSSelectionProps {}
 
+/**
+ * VCSSelection Component
+ * Allows users to select a Version Control System (VCS) or start with a blank workspace.
+ */
 const VCSSelection: React.FC<VCSSelectionProps> = React.memo(() => {
+  // Accessing state from the PodCreationStore
   const vcs = usePodCreationStore((state) => state.vcs);
   const setVCS = usePodCreationStore((state) => state.setVCS);
 
+  // GitHub integration status and actions
   const { isPending, isConnected, githubOrgName, initiateInstall, error } =
     useGitHubIntegration();
 
+  /**
+   * Handles the selection of a VCS option.
+   * @param vcsName - The name of the selected VCS.
+   */
   const handleSelect = useCallback(
     (vcsName: string) => {
       if (vcsName === "GitHub") {
@@ -99,15 +127,23 @@ const VCSSelection: React.FC<VCSSelectionProps> = React.memo(() => {
       }
       // No action for other VCS options yet
     },
-    [isConnected, initiateInstall]
+    [isConnected, initiateInstall, setVCS]
   );
 
-  const handleDisable = useCallback(async () => {
-    // Logic to disable integration
-    // This is a placeholder and should be implemented based on your requirements
+  /**
+   * Placeholder function to handle disabling the GitHub integration.
+   * Should be implemented based on requirements.
+   */
+  const handleDisable = useCallback(() => {
+    // TODO: Implement the logic to disable GitHub integration
     console.log("Disabling integration...");
   }, []);
 
+  /**
+   * Determines the properties of the action button based on the VCS option.
+   * @param option - The VCS option.
+   * @returns An object with button properties or null if no action is needed.
+   */
   const getButtonProps = useCallback(
     (option: { name: string }) => {
       if (option.name === "GitHub") {
@@ -139,6 +175,11 @@ const VCSSelection: React.FC<VCSSelectionProps> = React.memo(() => {
     [isConnected, initiateInstall, handleDisable]
   );
 
+  /**
+   * Generates the status text for a given VCS option.
+   * @param option - The VCS option.
+   * @returns A JSX element representing the status text.
+   */
   const getStatusText = useCallback(
     (option: { name: string }) => {
       if (option.name === "GitHub" && isConnected) {
@@ -174,6 +215,7 @@ const VCSSelection: React.FC<VCSSelectionProps> = React.memo(() => {
     [isConnected, githubOrgName]
   );
 
+  // Display error message if there's an error
   if (error) {
     return (
       <div className="p-6 max-w-[1320px] mx-auto">
@@ -184,6 +226,7 @@ const VCSSelection: React.FC<VCSSelectionProps> = React.memo(() => {
 
   return (
     <div className="p-6 max-w-[1320px] mx-auto">
+      {/* Header Section */}
       <div className="mb-6">
         <h1 className="text-lg font-semibold text-white mb-4">
           Version Control Integration
@@ -196,17 +239,20 @@ const VCSSelection: React.FC<VCSSelectionProps> = React.memo(() => {
       </div>
 
       {isPending ? (
+        // Display skeletons while data is loading
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {[...Array(4)].map((_, index) => (
             <VCSOptionSkeleton key={index} />
           ))}
         </div>
       ) : (
+        // Display VCS options
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {vcsOptions.map((option, index) => {
             const isSelected = vcs === option.name;
             const isDisabled =
               option.name === "GitLab" || option.name === "Bitbucket";
+
             return (
               <div
                 key={index}

@@ -1,4 +1,6 @@
-import React, { useEffect, useState, useRef } from "react";
+// PodInitializer.tsx
+
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import axios from "axios";
 import { motion } from "framer-motion";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -15,35 +17,167 @@ import { useNotificationContext } from "@/contexts/NotificationContext";
 import { usePodCreationStore } from "@/contexts/PodCreationStoreContext";
 import { EnvironmentAnalysisData } from "@/stores/podCreationStore";
 
-// Type definition for an initialization step
-type InitializationStep = {
+// Type definitions
+
+/**
+ * Represents a single initialization step.
+ */
+interface InitializationStep {
   name: string;
   key: string;
-};
+}
 
-// Define the steps for pod initialization
+/**
+ * Represents the props for the PodInitializer component.
+ */
+interface PodInitializerProps {
+  onComplete: (success: boolean) => void;
+}
+
+/**
+ * Represents error information for a failed step.
+ */
+interface StepError {
+  stepKey: string;
+  message: string;
+}
+
+/**
+ * Represents the data returned after processing the repository.
+ */
+interface ProcessRepositoryResult {
+  mergedRepositoryFile: string;
+}
+
+/**
+ * Represents the data returned after cloning the repository.
+ */
+interface CloneRepositoryResult {
+  repoDir: string;
+}
+
+/**
+ * Represents the duration information for each step.
+ */
+interface StepDurations {
+  [key: string]: number;
+}
+
+// Constants
+
+/**
+ * Defines the steps involved in pod initialization.
+ */
 const INITIALIZATION_STEPS: InitializationStep[] = [
   { name: "Downloading Repository", key: "cloning" },
   { name: "Processing Repository", key: "processing" },
   { name: "Analyzing Repository", key: "analyzing" },
 ];
 
-// Flag to control display of environment analysis data
-const SHOW_ENVIRONMENT_ANALYSIS_DATA = true;
+/**
+ * Flag to control the display of environment analysis data.
+ */
+const SHOW_ENVIRONMENT_ANALYSIS_DATA = false;
 
-// Props interface for the component
-interface PodInitializerProps {
-  onComplete: (success: boolean) => void;
+// Sub-components
+
+/**
+ * Represents a single initialization step item in the UI.
+ */
+interface InitializationStepItemProps {
+  step: InitializationStep;
+  isCompleted: boolean;
+  isCurrent: boolean;
+  isFailed: boolean;
+  duration: number;
 }
 
-// Interface for step error information
-interface StepError {
-  stepKey: string;
-  message: string;
+const InitializationStepItem: React.FC<InitializationStepItemProps> =
+  React.memo(({ step, isCompleted, isCurrent, isFailed, duration }) => {
+    /**
+     * Renders the appropriate icon based on the step status.
+     */
+    const renderStepIcon = () => {
+      if (isFailed) {
+        return (
+          <FontAwesomeIcon
+            icon={faTimesCircle}
+            className="text-red-500 text-xl"
+          />
+        );
+      } else if (isCompleted) {
+        return (
+          <FontAwesomeIcon
+            icon={faCheckCircle}
+            className="text-green-500 text-xl animate-checkmark"
+          />
+        );
+      } else if (isCurrent) {
+        return (
+          <FontAwesomeIcon
+            icon={faCircleNotch}
+            className="text-blue-500 text-xl animate-spin"
+          />
+        );
+      } else {
+        return (
+          <div className="h-5 w-5 border border-gray-500 rounded-full text-xl" />
+        );
+      }
+    };
+
+    return (
+      <div className="flex items-center mb-4">
+        {renderStepIcon()}
+        <div className="ml-4 flex flex-col">
+          <span className="text-white text-sm">{step.name}</span>
+          <span className="text-gray-400 text-xs">
+            Duration: {duration.toFixed(0)} seconds
+          </span>
+        </div>
+      </div>
+    );
+  });
+
+/**
+ * Represents the completion message after the initialization process.
+ */
+interface CompletionMessageProps {
+  isSuccess: boolean;
+  elapsedTime: number;
 }
 
+const CompletionMessage: React.FC<CompletionMessageProps> = React.memo(
+  ({ isSuccess, elapsedTime }) => (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      className={`flex items-center ${
+        isSuccess ? "text-green-400" : "text-red-400"
+      } mb-6`}
+    >
+      <FontAwesomeIcon
+        icon={isSuccess ? faRocket : faExclamationTriangle}
+        className="mr-2"
+      />
+      <span className="text-sm font-medium">
+        {isSuccess
+          ? "Setup Complete: Your workspace is ready to configure!"
+          : "Setup Failed"}
+      </span>
+    </motion.div>
+  )
+);
+
+// Main Component
+
+/**
+ * PodInitializer Component
+ * Manages the initialization process of a pod by executing predefined steps.
+ */
 const PodInitializer: React.FC<PodInitializerProps> = ({ onComplete }) => {
-  // Access global state from the pod creation store
+  // Accessing global state from the pod creation store
   const {
     repositoryName,
     repositoryURL,
@@ -52,13 +186,15 @@ const PodInitializer: React.FC<PodInitializerProps> = ({ onComplete }) => {
     setEnvironmentAnalysis,
   } = usePodCreationStore((state) => state);
 
+  // Accessing custom hooks
+  const { generateDockerfile } = useGenerateDockerfile();
+  const { showNotification } = useNotificationContext();
+
   // State variables for managing the initialization process
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [completedSteps, setCompletedSteps] = useState<string[]>([]);
   const [failedStep, setFailedStep] = useState<StepError | null>(null);
-  const [stepDurations, setStepDurations] = useState<{ [key: string]: number }>(
-    {}
-  );
+  const [stepDurations, setStepDurations] = useState<StepDurations>({});
   const [overallStartTime, setOverallStartTime] = useState<number | null>(null);
   const [overallElapsedTime, setOverallElapsedTime] = useState<number>(0);
   const [isProcessComplete, setIsProcessComplete] = useState<boolean>(false);
@@ -68,22 +204,18 @@ const PodInitializer: React.FC<PodInitializerProps> = ({ onComplete }) => {
   const overallTimerRef = useRef<NodeJS.Timeout | null>(null);
   const stepTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Custom hooks
-  const { generateDockerfile } = useGenerateDockerfile();
-  const { showNotification } = useNotificationContext();
-
-  // Start the initialization process when the component mounts and repositoryName is available
+  // Effect to start the initialization process when the component mounts and repositoryName is available
   useEffect(() => {
     if (repositoryName && !hasStartedProcess.current) {
       hasStartedProcess.current = true;
       startProcess();
     }
-  }, [repositoryName]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [repositoryName]); // Ignoring dependencies as startProcess is defined below
 
-  // Track overall elapsed time
+  // Effect to track overall elapsed time
   useEffect(() => {
     if (overallStartTime !== null && !isProcessComplete) {
-      // Start the overall timer
       overallTimerRef.current = setInterval(() => {
         setOverallElapsedTime((Date.now() - overallStartTime) / 1000);
       }, 1000);
@@ -97,7 +229,7 @@ const PodInitializer: React.FC<PodInitializerProps> = ({ onComplete }) => {
     };
   }, [overallStartTime, isProcessComplete]);
 
-  // Stop the overall timer when the process is complete
+  // Effect to stop the overall timer when the process is complete
   useEffect(() => {
     if (isProcessComplete && overallTimerRef.current) {
       clearInterval(overallTimerRef.current);
@@ -105,9 +237,9 @@ const PodInitializer: React.FC<PodInitializerProps> = ({ onComplete }) => {
   }, [isProcessComplete]);
 
   /**
-   * Main function to start the initialization process
+   * Starts the pod initialization process by executing each step sequentially.
    */
-  const startProcess = async () => {
+  const startProcess = useCallback(async () => {
     // Reset all state variables for a fresh start
     setCurrentStepIndex(0);
     setCompletedSteps([]);
@@ -119,13 +251,14 @@ const PodInitializer: React.FC<PodInitializerProps> = ({ onComplete }) => {
 
     try {
       // Execute each step sequentially
-      await executeStep(INITIALIZATION_STEPS[0], cloneRepository);
-
+      const repoDir = await executeStep(
+        INITIALIZATION_STEPS[0],
+        cloneRepository
+      );
       const scannedRepoData = await executeStep(
         INITIALIZATION_STEPS[1],
         processRepository
       );
-
       await executeStep(INITIALIZATION_STEPS[2], () =>
         generateWorkspaceData(scannedRepoData.mergedRepositoryFile)
       );
@@ -136,186 +269,205 @@ const PodInitializer: React.FC<PodInitializerProps> = ({ onComplete }) => {
         type: "success",
         title: "Pod Initialization Complete",
         message:
-          "Your pod has been initialized and is ready for configuration review",
+          "Your pod has been initialized and is ready for configuration review.",
       });
       onComplete(true);
     } catch (error) {
       // Process failed
       setIsProcessComplete(true);
+      // The error handling is done within executeStep
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Dependencies are managed within executeStep
+
+  /**
+   * Executes a single step in the initialization process.
+   * @param step - The step to execute.
+   * @param stepFunction - The function that performs the step.
+   * @returns The result of the stepFunction.
+   */
+  const executeStep = useCallback(
+    async (
+      step: InitializationStep,
+      stepFunction: () => Promise<any>
+    ): Promise<any> => {
+      // Update the current step index
+      const stepIndex = INITIALIZATION_STEPS.findIndex(
+        (s) => s.key === step.key
+      );
+      setCurrentStepIndex(stepIndex);
+
+      const stepStartTime = Date.now();
+
+      // Start the step timer to track duration
+      stepTimerRef.current = setInterval(() => {
+        setStepDurations((prevDurations) => ({
+          ...prevDurations,
+          [step.key]: (Date.now() - stepStartTime) / 1000,
+        }));
+      }, 1000);
+
+      try {
+        // Execute the step function
+        const result = await stepFunction();
+
+        // Mark the step as completed
+        setCompletedSteps((prevSteps) => [...prevSteps, step.key]);
+
+        // Clear the step timer
+        if (stepTimerRef.current) {
+          clearInterval(stepTimerRef.current);
+        }
+
+        // Set final duration for the step
+        setStepDurations((prevDurations) => ({
+          ...prevDurations,
+          [step.key]: (Date.now() - stepStartTime) / 1000,
+        }));
+
+        return result;
+      } catch (error) {
+        // Clear the step timer in case of error
+        if (stepTimerRef.current) {
+          clearInterval(stepTimerRef.current);
+        }
+
+        // Set final duration for the failed step
+        setStepDurations((prevDurations) => ({
+          ...prevDurations,
+          [step.key]: (Date.now() - stepStartTime) / 1000,
+        }));
+
+        // Handle the step error
+        handleStepError(
+          step.key,
+          `Failed to ${step.name.toLowerCase()}.`,
+          error
+        );
+        throw error; // Re-throw the error to stop the process
+      }
+    },
+    []
+  );
+
+  /**
+   * Clones the repository.
+   * @returns The directory of the cloned repository.
+   */
+  const cloneRepository =
+    useCallback(async (): Promise<CloneRepositoryResult> => {
+      const response = await axios.post("/api/clone-repository", {
+        repoFullName: repositoryName,
+      });
+      setRepositoryDir(response.data.repoDir);
+      return response.data.repoDir;
+    }, [repositoryName, setRepositoryDir]);
+
+  /**
+   * Processes the cloned repository.
+   * @returns The merged repository file data.
+   */
+  const processRepository =
+    useCallback(async (): Promise<ProcessRepositoryResult> => {
+      const response = await axios.post("/api/process-repository", {
+        repositoryURL,
+      });
+      return { mergedRepositoryFile: response.data.mergedRepositoryFile };
+    }, [repositoryURL]);
+
+  /**
+   * Generates workspace data based on the processed repository.
+   * @param mergedRepositoryFile - The merged repository file from the processing step.
+   */
+  const generateWorkspaceData = useCallback(
+    async (mergedRepositoryFile: string) => {
+      const analysisData = await generateDockerfile({
+        mergedRepositoryFile,
+        repositoryURL,
+      });
+      setEnvironmentAnalysis(analysisData);
+    },
+    [generateDockerfile, repositoryURL, setEnvironmentAnalysis]
+  );
+
+  /**
+   * Handles errors that occur during step execution.
+   * @param stepKey - The key of the step where the error occurred.
+   * @param defaultMessage - The default error message.
+   * @param error - The error object.
+   */
+  const handleStepError = useCallback(
+    (stepKey: string, defaultMessage: string, error: any) => {
+      const errorMessage = error.response?.data?.error || defaultMessage;
+      setFailedStep({ stepKey, message: errorMessage });
+      showNotification({
+        type: "error",
+        title: "Error",
+        message: errorMessage,
+      });
+      setIsProcessComplete(true);
       onComplete(false);
-    }
-  };
+    },
+    [showNotification, onComplete]
+  );
 
   /**
-   * Execute a single step in the process
-   * @param step - The step to execute
-   * @param stepFunction - The function that performs the step
+   * Determines if the environment analysis is complete.
+   * @param analysis - The environment analysis data.
+   * @returns True if the analysis is complete, otherwise false.
    */
-  const executeStep = async (
-    step: InitializationStep,
-    stepFunction: () => Promise<any>
-  ) => {
-    // Update the current step index
-    setCurrentStepIndex(
-      INITIALIZATION_STEPS.findIndex((s) => s.key === step.key)
-    );
-    const stepStartTime = Date.now();
+  const isEnvironmentAnalysisComplete = useCallback(
+    (analysis: EnvironmentAnalysisData | null): boolean => {
+      return !!analysis?.dockerfile;
+    },
+    []
+  );
 
-    // Start the step timer to track duration
-    stepTimerRef.current = setInterval(() => {
-      setStepDurations((prevDurations) => ({
-        ...prevDurations,
-        [step.key]: (Date.now() - stepStartTime) / 1000,
-      }));
-    }, 1000);
+  /**
+   * Renders the appropriate icon for each initialization step.
+   * @param stepKey - The key of the step.
+   * @param index - The index of the step.
+   * @returns A JSX element representing the step icon.
+   */
+  const renderStepIcon = useCallback(
+    (stepKey: string, index: number): JSX.Element => {
+      const isFailed = failedStep?.stepKey === stepKey;
+      const isCompleted = completedSteps.includes(stepKey);
+      const isCurrent = currentStepIndex === index && !isFailed;
 
-    try {
-      // Execute the step function
-      const result = await stepFunction();
-
-      // Mark the step as completed
-      setCompletedSteps((prevSteps) => [...prevSteps, step.key]);
-
-      // Clear the step timer
-      if (stepTimerRef.current) {
-        clearInterval(stepTimerRef.current);
+      if (isFailed) {
+        return (
+          <FontAwesomeIcon
+            icon={faTimesCircle}
+            className="text-red-500 text-xl"
+          />
+        );
+      } else if (isCompleted) {
+        return (
+          <FontAwesomeIcon
+            icon={faCheckCircle}
+            className="text-green-500 text-xl animate-checkmark"
+          />
+        );
+      } else if (isCurrent) {
+        return (
+          <FontAwesomeIcon
+            icon={faCircleNotch}
+            className="text-blue-500 text-xl animate-spin"
+          />
+        );
+      } else {
+        return (
+          <div className="h-5 w-5 border border-gray-500 rounded-full text-xl" />
+        );
       }
-
-      // Set final duration for the step
-      setStepDurations((prevDurations) => ({
-        ...prevDurations,
-        [step.key]: (Date.now() - stepStartTime) / 1000,
-      }));
-
-      return result;
-    } catch (error) {
-      // Clear the step timer in case of error
-      if (stepTimerRef.current) {
-        clearInterval(stepTimerRef.current);
-      }
-
-      // Set final duration for the failed step
-      setStepDurations((prevDurations) => ({
-        ...prevDurations,
-        [step.key]: (Date.now() - stepStartTime) / 1000,
-      }));
-
-      // Handle the step error
-      handleStepError(step.key, `Failed to ${step.name.toLowerCase()}.`, error);
-      throw error; // Re-throw the error to stop the process
-    }
-  };
-
-  /**
-   * Step 1: Clone the repository
-   */
-  const cloneRepository = async () => {
-    const response = await axios.post("/api/clone-repository", {
-      repoFullName: repositoryName,
-    });
-    setRepositoryDir(response.data.repoDir);
-    return response.data.repoDir;
-  };
-
-  /**
-   * Step 2: Process the repository
-   */
-  const processRepository = async () => {
-    const response = await axios.post("/api/process-repository", {
-      repositoryURL,
-    });
-    return { mergedRepositoryFile: response.data.mergedRepositoryFile };
-  };
-
-  /**
-   * Step 3: Generate workspace data
-   * @param mergedRepositoryFile - The merged repository file from the previous step
-   */
-  const generateWorkspaceData = async (mergedRepositoryFile: string) => {
-    const analysisData = await generateDockerfile({
-      mergedRepositoryFile,
-      repositoryURL,
-    });
-    setEnvironmentAnalysis(analysisData);
-  };
-
-  /**
-   * Handle errors that occur during steps
-   * @param stepKey - The key of the step where the error occurred
-   * @param defaultMessage - Default error message
-   * @param error - The error object
-   */
-  const handleStepError = (
-    stepKey: string,
-    defaultMessage: string,
-    error: any
-  ) => {
-    const errorMessage = error.response?.data?.error || defaultMessage;
-    setFailedStep({ stepKey, message: errorMessage });
-    showNotification({
-      type: "error",
-      title: "Error",
-      message: errorMessage,
-    });
-    setIsProcessComplete(true);
-    onComplete(false);
-  };
-
-  /**
-   * Check if environment analysis is complete
-   * @param analysis - The environment analysis data
-   * @returns True if the analysis is complete, false otherwise
-   */
-  const isEnvironmentAnalysisComplete = (
-    analysis: EnvironmentAnalysisData | null
-  ): boolean => {
-    return !!analysis?.dockerfile;
-  };
-
-  /**
-   * Render the icon for each step
-   * @param stepKey - The key of the step
-   * @param index - The index of the step
-   */
-  const renderStepIcon = (stepKey: string, index: number) => {
-    const iconClass = "text-xl";
-    if (failedStep?.stepKey === stepKey) {
-      // Step failed
-      return (
-        <FontAwesomeIcon
-          icon={faTimesCircle}
-          className={`${iconClass} text-red-500`}
-        />
-      );
-    } else if (completedSteps.includes(stepKey)) {
-      // Step completed successfully
-      return (
-        <FontAwesomeIcon
-          icon={faCheckCircle}
-          className={`${iconClass} text-green-500 animate-checkmark`}
-        />
-      );
-    } else if (currentStepIndex === index && !failedStep) {
-      // Current step in progress
-      return (
-        <FontAwesomeIcon
-          icon={faCircleNotch}
-          className={`${iconClass} text-blue-500 animate-spin`}
-        />
-      );
-    } else {
-      // Step not yet started
-      return (
-        <div
-          className={`${iconClass} h-5 w-5 border border-gray-500 rounded-full`}
-        />
-      );
-    }
-  };
+    },
+    [completedSteps, currentStepIndex, failedStep]
+  );
 
   return (
     <div className="p-6 max-w-[1320px] mx-auto">
-      {/* Header section */}
+      {/* Header Section */}
       <div className="mb-6">
         <h1 className="text-lg font-semibold text-white mb-4">
           Pod Initialization
@@ -330,58 +482,41 @@ const PodInitializer: React.FC<PodInitializerProps> = ({ onComplete }) => {
         )}
       </div>
 
-      {/* Steps display section */}
+      {/* Steps Display Section */}
       <div className="mb-6">
         {INITIALIZATION_STEPS.map((step, index) => (
-          <div key={step.key} className="flex items-center mb-4">
-            {renderStepIcon(step.key, index)}
-            <div className="ml-4 flex flex-col">
-              <span className="text-white text-sm">{step.name}</span>
-              <span className="text-gray-400 text-xs">
-                Duration: {stepDurations[step.key]?.toFixed(0) || 0} seconds
-              </span>
-            </div>
-          </div>
+          <InitializationStepItem
+            key={step.key}
+            step={step}
+            isCompleted={completedSteps.includes(step.key)}
+            isCurrent={currentStepIndex === index && !failedStep}
+            isFailed={failedStep?.stepKey === step.key}
+            duration={stepDurations[step.key] || 0}
+          />
         ))}
       </div>
 
-      {/* Error message display */}
+      {/* Error Message Display */}
       {failedStep && (
         <div className="mb-6">
           <p className="text-red-500 text-sm">
             Error in{" "}
-            {
-              INITIALIZATION_STEPS.find((s) => s.key === failedStep.stepKey)
-                ?.name
-            }
+            {INITIALIZATION_STEPS.find((s) => s.key === failedStep.stepKey)
+              ?.name || "a step"}
             : {failedStep.message}
           </p>
         </div>
       )}
 
-      {/* Completion message display */}
+      {/* Completion Message Display */}
       {isProcessComplete && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className={`flex items-center ${
-            failedStep ? "text-red-400" : "text-green-400"
-          } mb-6`}
-        >
-          <FontAwesomeIcon
-            icon={failedStep ? faExclamationTriangle : faRocket}
-            className="mr-2"
-          />
-          <span className="text-sm font-medium">
-            {failedStep
-              ? "Setup Failed"
-              : "Setup Complete: Your workspace is ready to use!"}
-          </span>
-        </motion.div>
+        <CompletionMessage
+          isSuccess={!failedStep}
+          elapsedTime={overallElapsedTime}
+        />
       )}
 
-      {/* Environment analysis data display (if enabled) */}
+      {/* Environment Analysis Data Display */}
       {SHOW_ENVIRONMENT_ANALYSIS_DATA &&
         isEnvironmentAnalysisComplete(environmentAnalysis) && (
           <div className="bg-dashboard border border-border rounded-[5px] p-4 mb-6">
