@@ -10,20 +10,13 @@ import {
   Users,
   Activity,
   Zap,
-  CheckCircle,
-  PieChart,
-  LineChart,
-  Clock,
-  MoreHorizontal,
-  Plus,
-  Minus,
-  FileCode,
+  CheckCircle, // Importing CheckCircle for merged branches
 } from "lucide-react";
 
 const Dashboard = () => {
   const [hoveredBranch, setHoveredBranch] = useState(null);
 
-  // Flow Data with 'merged' property and additional branches
+  // Updated Flow Data with 'merged' property and additional branches
   const flowData = [
     {
       id: 1,
@@ -77,7 +70,7 @@ const Dashboard = () => {
       linesAdded: 85,
       linesRemoved: 20,
       parentCommit: 2,
-      merged: true,
+      merged: true, // Indicating this branch has been merged
     },
     {
       id: 5,
@@ -92,7 +85,7 @@ const Dashboard = () => {
       linesAdded: 110,
       linesRemoved: 45,
       parentCommit: 2,
-      merged: false,
+      merged: false, // Not merged yet
     },
     {
       id: 6,
@@ -107,8 +100,9 @@ const Dashboard = () => {
       linesAdded: 30,
       linesRemoved: 5,
       parentCommit: 2,
-      merged: true,
+      merged: true, // Indicating this branch has been merged
     },
+    // Additional branches for other main commits
     {
       id: 7,
       type: "branch",
@@ -141,7 +135,7 @@ const Dashboard = () => {
     },
   ];
 
-  // Online Users Data
+  // Hardcoded Online Users
   const onlineUsers = [
     {
       id: 1,
@@ -149,10 +143,6 @@ const Dashboard = () => {
       status: "Coding",
       avatar: "S",
       lastActive: "2m ago",
-      branch: "Feature/Login",
-      commitCount: 3,
-      codeChanges: 15,
-      filesChanged: 2,
     },
     {
       id: 2,
@@ -160,10 +150,6 @@ const Dashboard = () => {
       status: "Reviewing",
       avatar: "J",
       lastActive: "5m ago",
-      branch: "Main",
-      commitCount: 1,
-      codeChanges: 7,
-      filesChanged: 1,
     },
     {
       id: 3,
@@ -171,10 +157,6 @@ const Dashboard = () => {
       status: "Testing",
       avatar: "M",
       lastActive: "1m ago",
-      branch: "Hotfix/SecurityPatch",
-      commitCount: 4,
-      codeChanges: 23,
-      filesChanged: 5,
     },
     {
       id: 4,
@@ -182,10 +164,6 @@ const Dashboard = () => {
       status: "Coding",
       avatar: "M",
       lastActive: "Just now",
-      branch: "Feature/Dashboard",
-      commitCount: 6,
-      codeChanges: 31,
-      filesChanged: 8,
     },
   ];
 
@@ -218,60 +196,74 @@ const Dashboard = () => {
   }, {});
 
   // Spacing configurations
-  const mainSpacing = 950 / (mainCommits.length + 1);
-  const branchSpacing = 50;
+  const mainSpacing = 950 / (mainCommits.length + 1); // Adjusted to maintain original spacing
+  const branchSpacing = 50; // Fixed spacing for branch paths
+
+  // Productivity Stats (Hardcoded)
+  const productivityStats = [
+    {
+      id: 1,
+      title: "Total Commits",
+      value: 10,
+      icon: <GitCommit size={20} className="text-blue-400" />,
+      color: "bg-blue-500",
+    },
+    {
+      id: 2,
+      title: "Lines Added",
+      value: 285,
+      icon: <Activity size={20} className="text-green-400" />,
+      color: "bg-green-500",
+    },
+    {
+      id: 3,
+      title: "Lines Removed",
+      value: 80,
+      icon: <Zap size={20} className="text-yellow-400" />,
+      color: "bg-yellow-500",
+    },
+    {
+      id: 4,
+      title: "Active Users",
+      value: onlineUsers.length,
+      icon: <Users size={20} className="text-purple-400" />,
+      color: "bg-purple-500",
+    },
+  ];
+
+  // Current Branch (Hardcoded)
+  const currentBranch = {
+    name: "Feature/Signup",
+    user: "Muhammad",
+    startTime: "2h ago",
+    status: "In Progress",
+    commits: 4,
+    linesAdded: 110,
+    linesRemoved: 45,
+  };
 
   // Function to render commit history
-  // Function to render commit history
   const renderCommitHistory = () => (
-    <div className="bg-dashboard border border-border rounded-lg p-4 mb-4 flex-grow overflow-y-auto">
-      <div className="flex justify-between items-center mb-3">
-        <h3 className="text-white text-xs font-semibold">Commit History</h3>
-        <MoreHorizontal className="text-gray-400 cursor-pointer" size={16} />
-      </div>
+    <div className="bg-dashboard border border-border rounded-lg p-4 mb-4">
+      <h3 className="text-white text-sm font-semibold mb-2">Commit History</h3>
       <div className="space-y-2">
         {flowData
           .slice(-5)
           .reverse()
           .map((item) => (
-            <div
-              key={item.id}
-              className="border border-border rounded-lg p-2 text-xs flex items-center"
-            >
-              <div className="flex-shrink-0 mr-2">
-                <span className="w-6 h-6 rounded-full bg-dashboard flex items-center justify-center">
-                  {item.type === "merge" ? (
-                    <GitMerge size={12} className="text-purple-400" />
-                  ) : (
-                    <GitCommit size={12} className="text-blue-400" />
-                  )}
-                </span>
-              </div>
-              <div className="flex-grow">
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-300 font-medium">{item.user}</span>
-                </div>
-                <p className="text-gray-400 text-[10px]">
-                  {item.action} in {item.branchName}
-                </p>
-              </div>
-              <div className="flex items-center space-x-2 text-[10px] text-gray-500 ml-2">
-                <span className="flex items-center">
-                  <span className="text-gray-500 text-[10px]">{item.time}</span>
-                </span>
-                <span className="flex items-center">
-                  <GitCommit size={8} className="mr-1" />
-                  {item.commits}
-                </span>
-                <span className="flex items-center">
-                  <Plus size={8} className="mr-1 text-green-500" />
-                  {item.linesAdded}
-                </span>
-                <span className="flex items-center">
-                  <Minus size={8} className="mr-1 text-red-500" />
-                  {item.linesRemoved}
-                </span>
-              </div>
+            <div key={item.id} className="flex items-center text-xs">
+              <span className="w-4 h-4 mr-2 flex items-center justify-center">
+                {item.type === "merge" ? (
+                  <GitMerge size={14} className="text-purple-400" />
+                ) : (
+                  <GitCommit size={14} className="text-blue-400" />
+                )}
+              </span>
+              <span className="text-gray-300">{item.user}</span>
+              <span className="text-gray-500 mx-1">-</span>
+              <span className="text-gray-400">
+                {item.action || `Created ${item.branchName}`}
+              </span>
             </div>
           ))}
       </div>
@@ -281,7 +273,7 @@ const Dashboard = () => {
   return (
     <div className="h-full bg-dashboard">
       {/* Header */}
-      <div className="border-b border-border w-full h-11 flex items-center">
+      <div className="border-b border-border w-full h-11 flex items-center bg-gray-900">
         <div className="ml-5 flex gap-2 items-center">
           <Code className="text-tertiaryBorder" size={20} />
           <p className="text-xs text-accent">Team - Engineering</p>
@@ -291,7 +283,7 @@ const Dashboard = () => {
       </div>
 
       {/* Main Content */}
-      <div className="p-4 max-w-[1400px] mx-auto flex flex-col gap-2">
+      <div className="p-4 max-w-[1200px] mx-auto flex flex-col gap-6">
         {/* Title and Subtitle */}
         <div>
           <h1 className="text-lg font-semibold text-white mb-2">Team Flow</h1>
@@ -301,16 +293,13 @@ const Dashboard = () => {
           </p>
         </div>
 
-        {/* Flex container for all sections */}
-        <div className="flex flex-col lg:flex-row gap-6 h-[calc(100vh-200px)] overflow-hidden">
-          {/* Git Tree Section */}
-          <div className="flex-1 overflow-auto" style={{ maxWidth: "50%" }}>
-            <div className="bg-dashboard h-full border border-border rounded-lg p-4 relative">
-              <svg
-                className="w-full h-[700px]"
-                style={{ maxWidth: "100%" }}
-                viewBox="0 0 300 900"
-              >
+        {/* Flex container for left and right sections */}
+        <div className="flex flex-col lg:flex-row gap-6">
+          {/* Left Section: Flow Diagram and Productivity Stats */}
+          <div className="flex-1 space-y-6">
+            {/* Flow Diagram */}
+            <div className="bg-dashboard border border-border rounded-lg p-4 relative">
+              <svg className="w-full h-[600px]" viewBox="0 0 300 1000">
                 {/* Branch Paths */}
                 {Object.keys(branchesByParent).map((parentId) => {
                   const parentCommit = mainCommits.find(
@@ -322,8 +311,8 @@ const Dashboard = () => {
 
                   return branchesByParent[parentId].map(
                     (branch, branchIndex) => {
-                      const endX = 150;
-                      const endY = startY - branchSpacing * (branchIndex + 1);
+                      const endX = 150; // Fixed horizontal position for all branches
+                      const endY = startY - branchSpacing * (branchIndex + 1); // Consistent vertical spacing
 
                       const branchPath = getBranchPath(
                         startX,
@@ -347,7 +336,7 @@ const Dashboard = () => {
                             ease: "easeInOut",
                           }}
                           style={{
-                            opacity: branch.merged ? 0.5 : 1,
+                            opacity: branch.merged ? 0.5 : 1, // Adjust opacity based on merged status
                           }}
                         />
                       );
@@ -434,10 +423,11 @@ const Dashboard = () => {
                   const parentIndex = mainCommits.indexOf(parentCommit);
                   const startX = 50;
                   const startY = 975 - mainSpacing * (parentIndex + 1);
+
                   return branchesByParent[parentId].map(
                     (branch, branchIndex) => {
-                      const endX = 150;
-                      const endY = startY - branchSpacing * (branchIndex + 1);
+                      const endX = 150; // Fixed horizontal position for all branches
+                      const endY = startY - branchSpacing * (branchIndex + 1); // Consistent vertical spacing
 
                       return (
                         <motion.g
@@ -517,10 +507,10 @@ const Dashboard = () => {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 10 }}
-                    className="absolute bg-dashboard border border-border p-4 rounded-lg shadow-lg z-10"
+                    className="absolute bg-gray-800 p-4 rounded-lg shadow-lg z-10"
                     style={{
-                      left: "160px",
-                      top: "20%",
+                      left: "160px", // Positioned to the right of branch nodes
+                      top: "20%", // Adjust as needed for visibility
                     }}
                   >
                     <h4 className="text-white font-semibold mb-2">
@@ -539,108 +529,82 @@ const Dashboard = () => {
                 )}
               </AnimatePresence>
             </div>
-          </div>
 
-          {/* Middle Section: Online Users and Commit History */}
-          <div className="w-full lg:w-1/3 space-y-4 overflow-auto flex flex-col">
-            {/* Online Users */}
-            <div className="bg-dashboard border border-border rounded-lg p-4">
-              <div className="flex justify-between items-center mb-3">
-                <h3 className="text-white text-xs font-semibold">
+            {/* Right Section: Sidebar with Online Users, Commit History, and Current Branch */}
+            <div className="w-full lg:w-1/3 space-y-6">
+              {/* Online Users */}
+              <div className="bg-dashboard border border-border rounded-lg p-4">
+                <h3 className="text-white text-sm font-semibold mb-4">
                   Online Users
                 </h3>
-                <MoreHorizontal
-                  className="text-gray-400 cursor-pointer"
-                  size={16}
-                />
-              </div>
-              <div className="space-y-2 max-h-[200px] overflow-y-auto">
-                {onlineUsers.map((user) => (
-                  <div
-                    key={user.id}
-                    className="border border-border rounded-lg p-2 transition-colors duration-300 hover:bg-dashboard flex items-center justify-between"
-                  >
-                    <div className="flex items-center">
-                      <div className="w-8 h-8 rounded-full bg-dashboard flex items-center justify-center text-white text-xs font-medium mr-2">
-                        {user.avatar}
+                <div className="space-y-3">
+                  {onlineUsers.map((user) => (
+                    <div
+                      key={user.id}
+                      className="flex items-center justify-between"
+                    >
+                      <div className="flex items-center">
+                        <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center text-white text-xs font-medium mr-3">
+                          {user.avatar}
+                        </div>
+                        <div>
+                          <p className="text-gray-300 text-sm font-medium">
+                            {user.name}
+                          </p>
+                          <p className="text-gray-500 text-xs">{user.status}</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-gray-300 text-xs font-medium">
-                          {user.name}
-                        </p>
-                        <p className="text-gray-500 text-[10px]">
-                          {user.status} • {user.lastActive}
-                        </p>
-                      </div>
+                      <span className="text-gray-400 text-xs">
+                        {user.lastActive}
+                      </span>
                     </div>
-                    <div className="flex items-center space-x-2 text-gray-400 text-[10px]">
-                      <span className="flex items-center">
-                        <GitBranch size={10} className="mr-1" />
-                        {user.branch}
-                      </span>
-                      <span className="flex items-center">
-                        <GitCommit size={10} className="mr-1" />
-                        {user.commitCount}
-                      </span>
-                      <span className="flex items-center">
-                        <Activity size={10} className="mr-1" />
-                        {user.codeChanges}
-                      </span>
-                      <span className="flex items-center">
-                        <FileCode size={10} className="mr-1" />
-                        {user.filesChanged}
-                      </span>
-                      <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Commit History */}
+              {renderCommitHistory()}
+
+              {/* Current Branch Details */}
+              <div className="bg-dashboard border border-border rounded-lg p-4">
+                <h3 className="text-white text-sm font-semibold mb-2">
+                  Current Branch
+                </h3>
+                <div className="flex items-center space-x-4">
+                  <GitBranch size={24} className="text-green-400" />
+                  <div>
+                    <p className="text-white font-medium">
+                      {currentBranch.name}
+                    </p>
+                    <p className="text-gray-400 text-xs">
+                      {currentBranch.user} • {currentBranch.startTime}
+                    </p>
+                    <p className="text-gray-300 text-xs">
+                      Status: {currentBranch.status}
+                    </p>
+                    <div className="flex space-x-2 mt-2">
+                      <div className="flex items-center">
+                        <GitCommit size={14} className="text-blue-400 mr-1" />
+                        <span className="text-gray-300 text-xs">
+                          {currentBranch.commits} Commits
+                        </span>
+                      </div>
+                      <div className="flex items-center">
+                        <Activity size={14} className="text-green-400 mr-1" />
+                        <span className="text-gray-300 text-xs">
+                          +{currentBranch.linesAdded} Lines Added
+                        </span>
+                      </div>
+                      <div className="flex items-center">
+                        <Zap size={14} className="text-yellow-400 mr-1" />
+                        <span className="text-gray-300 text-xs">
+                          -{currentBranch.linesRemoved} Lines Removed
+                        </span>
+                      </div>
                     </div>
                   </div>
-                ))}
+                </div>
               </div>
-            </div>
-            {/* Commit History */}
-            {renderCommitHistory()}
-          </div>
-
-          {/* Right Section: Productivity Tracker */}
-          <div className="w-full lg:w-1/6 space-y-4">
-            <div className="bg-dashboard border border-border rounded-[5px] p-3">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-white text-xs font-semibold">
-                  Code Coverage
-                </h3>
-                <PieChart size={24} className="text-green-400" />
-              </div>
-              <p className="text-2xl font-bold text-white">85%</p>
-              <p className="text-gray-400 text-[10px]">+5% from last week</p>
-            </div>
-            <div className="bg-dashboard border border-border rounded-[5px] p-3">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-white text-xs font-semibold">
-                  Pull Requests
-                </h3>
-                <GitBranch size={24} className="text-blue-400" />
-              </div>
-              <p className="text-2xl font-bold text-white">12</p>
-              <p className="text-gray-400 text-[10px]">3 awaiting review</p>
-            </div>
-            <div className="bg-dashboard border border-border rounded-[5px] p-3">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-white text-xs font-semibold">
-                  Build Status
-                </h3>
-                <CheckCircle size={24} className="text-green-400" />
-              </div>
-              <p className="text-2xl font-bold text-white">All Passing</p>
-              <p className="text-gray-400 text-[10px]">
-                Last build: 10 min ago
-              </p>
-            </div>
-            <div className="bg-dashboard border border-border rounded-[5px] p-3">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-white text-xs font-semibold">Code Churn</h3>
-                <LineChart size={24} className="text-yellow-400" />
-              </div>
-              <p className="text-2xl font-bold text-white">-12%</p>
-              <p className="text-gray-400 text-[10px]">Decreased this sprint</p>
             </div>
           </div>
         </div>

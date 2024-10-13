@@ -1,0 +1,834 @@
+look at this code and these two screenshots
+
+code 1 is image 1, 
+
+code 1
+----------------------
+
+this looks good, however i want to make this vertical instead of horiontal, so the line should go up instead of side to side, please keep all the elements like the branches the same, just flip them horizontally,
+
+"use client";
+
+import React, { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Code,
+  GitBranch,
+  GitCommit,
+  GitMerge,
+  GitPullRequest,
+  GitFork,
+} from "lucide-react";
+
+const FlowDiagram = () => {
+  const [hoveredBranch, setHoveredBranch] = useState(null);
+
+  const flowData = [
+    {
+      id: 1,
+      type: "main",
+      user: "Omar",
+      branchName: "Main Branch",
+      action: "Merged PR #42",
+      time: "2m ago",
+      icon: <GitMerge size={16} />,
+      additionalInfo: "Code merged into the main branch.",
+      commits: 5,
+      linesAdded: 120,
+      linesRemoved: 80,
+    },
+    {
+      id: 2,
+      type: "branch",
+      user: "Madison",
+      branchName: "Feature/Login",
+      action: "Created a feature branch",
+      time: "5m ago",
+      icon: <GitBranch size={16} />,
+      additionalInfo: "New branch created for the login feature.",
+      commits: 3,
+      linesAdded: 85,
+      linesRemoved: 20,
+    },
+    {
+      id: 3,
+      type: "branch",
+      user: "Muhammad",
+      branchName: "Feature/Signup",
+      action: "Opened PR #43",
+      time: "4m ago",
+      icon: <GitPullRequest size={16} />,
+      additionalInfo: "Opened a pull request for the signup feature.",
+      commits: 4,
+      linesAdded: 110,
+      linesRemoved: 45,
+      mergedToMain: true,
+    },
+    {
+      id: 4,
+      type: "branch",
+      user: "Aman",
+      branchName: "Fork/Repo",
+      action: "Forked the repository",
+      time: "3m ago",
+      icon: <GitFork size={16} />,
+      additionalInfo: "Forked the repository for a new feature.",
+      commits: 1,
+      linesAdded: 30,
+      linesRemoved: 0,
+    },
+    {
+      id: 5,
+      type: "subbranch",
+      user: "Sarah",
+      branchName: "Fix/Login-UI",
+      action: "Committed changes",
+      time: "1m ago",
+      icon: <GitCommit size={16} />,
+      additionalInfo: "Committed changes to the feature/login-ui branch.",
+      commits: 2,
+      linesAdded: 45,
+      linesRemoved: 15,
+    },
+    {
+      id: 6,
+      type: "subbranch",
+      user: "Liam",
+      branchName: "Review/Signup",
+      action: "Reviewed PR #43",
+      time: "30s ago",
+      icon: <GitPullRequest size={16} />,
+      additionalInfo: "Reviewed the signup feature pull request.",
+      commits: 0,
+      linesAdded: 0,
+      linesRemoved: 0,
+    },
+    {
+      id: 7,
+      type: "branch",
+      user: "Emma",
+      branchName: "Staging",
+      action: "Deployed to staging",
+      time: "Now",
+      icon: <GitMerge size={16} />,
+      additionalInfo: "Deployed to the staging environment.",
+      commits: 8,
+      linesAdded: 220,
+      linesRemoved: 150,
+    },
+  ];
+
+  const mainLinePoints = "M50,200 L950,200";
+
+  const getBranchPath = (startX, startY, endX, endY, mergedToMain = false) => {
+    const controlOffsetX = 24;
+    const controlOffsetY = endY > startY ? 48 : -48;
+
+    if (mergedToMain) {
+      return `M${startX},${startY} 
+      C${startX + controlOffsetX},${startY + controlOffsetY} 
+       ${endX - controlOffsetX},${endY - controlOffsetY} 
+       ${endX},${endY}`;
+    }
+    return `M${startX},${startY} 
+      C${startX + controlOffsetX},${startY + controlOffsetY} 
+       ${endX - controlOffsetX},${endY - controlOffsetY} 
+       ${endX},${endY}`;
+  };
+
+  const calculateMainY = () => {
+    return 200;
+  };
+
+  const branches = flowData.filter((item) => item.type !== "main");
+  const branchSpacing = 900 / (branches.length + 1);
+
+  return (
+    <div className="h-full">
+      {/* Header */}
+      <div className="border-b border-border w-full h-11 flex items-center bg-gray-900">
+        <div className="ml-5 flex gap-2 items-center">
+          <Code className="text-tertiaryBorder" size={20} />
+          <p className="text-xs text-accent">Team - Engineering</p>
+          <span className="text-sidenav">&gt;</span>
+          <p className="text-xs text-white">Team Flow</p>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="p-6 max-w-[1320px] mx-auto">
+        <h1 className="text-lg font-semibold text-white mb-2">Team Flow</h1>
+        <p className="text-gray-400 text-[13px] mb-6">
+          Visualize your team's development progress and activity in real-time.
+        </p>
+
+        {/* Flow Diagram */}
+        <div className="bg-dashboard border border-border rounded-[5px] p-4 relative">
+          <svg className="w-full h-[400px]" viewBox="0 0 1000 400">
+            {/* Main Flow Line */}
+            <motion.path
+              d={mainLinePoints}
+              stroke="#34D399"
+              strokeWidth="3"
+              fill="none"
+              initial={{ pathLength: 0 }}
+              animate={{ pathLength: 1 }}
+              transition={{ duration: 2, ease: "easeInOut" }}
+            />
+
+            {/* Flow Nodes */}
+            {flowData.map((item, index) => {
+              if (item.type === "main") {
+                const mainX = 50;
+                const mainY = calculateMainY();
+
+                return (
+                  <motion.g
+                    key={item.id}
+                    initial={{ opacity: 0, scale: 0 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.5, delay: 0.5 }}
+                  >
+                    <circle
+                      cx={mainX}
+                      cy={mainY}
+                      r="22"
+                      fill="#1F2937"
+                      stroke="#4B5563"
+                      strokeWidth="2"
+                    />
+                    <circle cx={mainX} cy={mainY} r="19" fill="#2D3748" />
+                    <foreignObject
+                      x={mainX - 12}
+                      y={mainY - 12}
+                      width={24}
+                      height={24}
+                    >
+                      <div className="text-white flex justify-center items-center h-full w-full">
+                        {item.icon}
+                      </div>
+                    </foreignObject>
+                    {/* User Name */}
+                    <text
+                      x={mainX}
+                      y={mainY + 40}
+                      fill="#D1D5DB"
+                      fontSize="11"
+                      fontWeight="bold"
+                      textAnchor="middle"
+                    >
+                      {item.user}
+                    </text>
+                    {/* Branch Name */}
+                    <text
+                      x={mainX}
+                      y={mainY + 56}
+                      fill="#9CA3AF"
+                      fontSize="9"
+                      textAnchor="middle"
+                    >
+                      {item.branchName}
+                    </text>
+                  </motion.g>
+                );
+              } else {
+                const branchIndex = branches.indexOf(item) + 1;
+                const xPos = 50 + branchSpacing * branchIndex * 0.8;
+                const yPos = calculateMainY();
+
+                const endX = xPos + 120;
+                const endY = item.type === "branch" ? yPos - 80 : yPos + 80;
+                const branchPath = getBranchPath(xPos, yPos, endX, endY);
+                const mergePath = item.mergedToMain
+                  ? getBranchPath(endX, endY, xPos + 240, yPos, true)
+                  : null;
+
+                return (
+                  <g
+                    key={item.id}
+                    onMouseEnter={() => setHoveredBranch(item.id)}
+                    onMouseLeave={() => setHoveredBranch(null)}
+                  >
+                    {/* Branch Path */}
+                    <motion.path
+                      d={branchPath}
+                      stroke="#34D399"
+                      strokeWidth="2"
+                      fill="none"
+                      initial={{ pathLength: 0 }}
+                      animate={{ pathLength: 1 }}
+                      transition={{
+                        duration: 1.5,
+                        delay: index * 0.3,
+                        ease: "easeInOut",
+                      }}
+                    />
+
+                    {/* Merge Path */}
+                    {mergePath && (
+                      <motion.path
+                        d={mergePath}
+                        stroke="#34D399"
+                        strokeWidth="2"
+                        fill="none"
+                        initial={{ pathLength: 0 }}
+                        animate={{ pathLength: 1 }}
+                        transition={{
+                          duration: 1.5,
+                          delay: index * 0.3 + 1,
+                          ease: "easeInOut",
+                        }}
+                      />
+                    )}
+
+                    {/* Branch Node */}
+                    <motion.g
+                      initial={{ opacity: 0, scale: 0 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{
+                        duration: 0.5,
+                        delay: index * 0.3 + 1,
+                        ease: "easeOut",
+                      }}
+                      whileHover={{ scale: 1.1 }}
+                    >
+                      <circle
+                        cx={endX}
+                        cy={endY}
+                        r="22"
+                        fill="#1F2937"
+                        stroke={
+                          hoveredBranch === item.id ? "#34D399" : "#4B5563"
+                        }
+                        strokeWidth="2"
+                      />
+                      <circle cx={endX} cy={endY} r="19" fill="#2D3748" />
+                      <foreignObject
+                        x={endX - 8}
+                        y={endY - 8}
+                        width={16}
+                        height={16}
+                      >
+                        <div className="text-white flex justify-center items-center h-full w-full">
+                          {item.icon}
+                        </div>
+                      </foreignObject>
+                      {/* User Name */}
+                      <text
+                        x={endX}
+                        y={item.type === "branch" ? endY - 48 : endY + 48}
+                        fill="#D1D5DB"
+                        fontSize="11"
+                        fontWeight="bold"
+                        textAnchor="middle"
+                      >
+                        {item.user}
+                      </text>
+                      {/* Branch Name */}
+                      <text
+                        x={endX}
+                        y={item.type === "branch" ? endY - 32 : endY + 64}
+                        fill="#9CA3AF"
+                        fontSize="9"
+                        textAnchor="middle"
+                      >
+                        {item.branchName}
+                      </text>
+                    </motion.g>
+
+                    {/* Tooltip on Hover */}
+                    <AnimatePresence>
+                      {hoveredBranch === item.id && (
+                        <motion.foreignObject
+                          x={endX - 112}
+                          y={item.type === "branch" ? endY - 144 : endY + 32}
+                          width={224}
+                          height={112}
+                          initial={{
+                            opacity: 0,
+                            y: item.type === "branch" ? 20 : -20,
+                          }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{
+                            opacity: 0,
+                            y: item.type === "branch" ? 20 : -20,
+                          }}
+                          transition={{ duration: 0.2 }}
+                        >
+                          <div className="bg-dashboard border border-border rounded-[5px] p-3 shadow-lg text-white text-xs">
+                            <h3 className="text-white text-sm font-semibold mb-2">
+                              {item.action}
+                            </h3>
+                            <p className="text-gray-400 text-xs mb-2">
+                              {item.additionalInfo}
+                            </p>
+                            <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+                              <div className="flex items-center">
+                                <span className="w-2 h-2 bg-accent rounded-full mr-2"></span>
+                                <span className="text-accent">
+                                  Commits: {item.commits}
+                                </span>
+                              </div>
+                              <div className="flex items-center">
+                                <span className="w-2 h-2 bg-gray-500 rounded-full mr-2"></span>
+                                <span className="text-gray-400">
+                                  Time: {item.time}
+                                </span>
+                              </div>
+                              <div className="flex items-center">
+                                <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                                <span className="text-green-400">
+                                  Added: +{item.linesAdded}
+                                </span>
+                              </div>
+                              <div className="flex items-center">
+                                <span className="w-2 h-2 bg-red-500 rounded-full mr-2"></span>
+                                <span className="text-red-400">
+                                  Removed: -{item.linesRemoved}
+                                </span>
+                              </div>
+                              <div className="flex items-center col-span-2">
+                                <span className="w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
+                                <span className="text-blue-400">
+                                  Branch: {item.branchName}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </motion.foreignObject>
+                      )}
+                    </AnimatePresence>
+                  </g>
+                );
+              }
+            })}
+          </svg>
+        </div>
+
+        {/* Description */}
+        <p className="text-gray-400 text-sm mt-6">
+          Projects let you maintain multiple versions of your team's codebase
+          and easily merge your changes together when you're ready. Anyone on
+          your team can "fork" (create a new copy of the code), make changes,
+          preview what changed, and then merge those changes back.
+        </p>
+      </div>
+    </div>
+  );
+};
+
+export default FlowDiagram;
+
+
+
+
+code 2. code two was a attempt at making it verticle as shown in image 2. the issue is that the branch line is straigh and is not wiggly and following the same code as before but just flipped, 
+"use client";
+
+import React, { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Code,
+  GitBranch,
+  GitCommit,
+  GitMerge,
+  GitPullRequest,
+  GitFork,
+} from "lucide-react";
+
+const FlowDiagram = () => {
+  const [hoveredBranch, setHoveredBranch] = useState(null);
+
+  const flowData = [
+    {
+      id: 1,
+      type: "main",
+      user: "Omar",
+      branchName: "Main Branch",
+      action: "Merged PR #42",
+      time: "2m ago",
+      icon: <GitMerge size={16} />,
+      additionalInfo: "Code merged into the main branch.",
+      commits: 5,
+      linesAdded: 120,
+      linesRemoved: 80,
+    },
+    {
+      id: 2,
+      type: "branch",
+      user: "Madison",
+      branchName: "Feature/Login",
+      action: "Created a feature branch",
+      time: "5m ago",
+      icon: <GitBranch size={16} />,
+      additionalInfo: "New branch created for the login feature.",
+      commits: 3,
+      linesAdded: 85,
+      linesRemoved: 20,
+    },
+    {
+      id: 3,
+      type: "branch",
+      user: "Muhammad",
+      branchName: "Feature/Signup",
+      action: "Opened PR #43",
+      time: "4m ago",
+      icon: <GitPullRequest size={16} />,
+      additionalInfo: "Opened a pull request for the signup feature.",
+      commits: 4,
+      linesAdded: 110,
+      linesRemoved: 45,
+      mergedToMain: true,
+    },
+    {
+      id: 4,
+      type: "branch",
+      user: "Aman",
+      branchName: "Fork/Repo",
+      action: "Forked the repository",
+      time: "3m ago",
+      icon: <GitFork size={16} />,
+      additionalInfo: "Forked the repository for a new feature.",
+      commits: 1,
+      linesAdded: 30,
+      linesRemoved: 0,
+    },
+    {
+      id: 5,
+      type: "subbranch",
+      user: "Sarah",
+      branchName: "Fix/Login-UI",
+      action: "Committed changes",
+      time: "1m ago",
+      icon: <GitCommit size={16} />,
+      additionalInfo: "Committed changes to the feature/login-ui branch.",
+      commits: 2,
+      linesAdded: 45,
+      linesRemoved: 15,
+    },
+    {
+      id: 6,
+      type: "subbranch",
+      user: "Liam",
+      branchName: "Review/Signup",
+      action: "Reviewed PR #43",
+      time: "30s ago",
+      icon: <GitPullRequest size={16} />,
+      additionalInfo: "Reviewed the signup feature pull request.",
+      commits: 0,
+      linesAdded: 0,
+      linesRemoved: 0,
+    },
+    {
+      id: 7,
+      type: "branch",
+      user: "Emma",
+      branchName: "Staging",
+      action: "Deployed to staging",
+      time: "Now",
+      icon: <GitMerge size={16} />,
+      additionalInfo: "Deployed to the staging environment.",
+      commits: 8,
+      linesAdded: 220,
+      linesRemoved: 150,
+    },
+  ];
+
+  const mainLinePoints = "M400,50 L400,950";
+
+  const getBranchPath = (startX, startY, endX, endY, mergedToMain = false) => {
+    const controlOffsetX = endX > startX ? 60 : -60;
+    const controlOffsetY = 30;
+
+    if (mergedToMain) {
+      return `M${startX},${startY} 
+      C${startX + controlOffsetX},${startY + controlOffsetY} 
+       ${endX - controlOffsetX},${endY - controlOffsetY} 
+       ${endX},${endY}`;
+    }
+    return `M${startX},${startY} 
+      C${startX + controlOffsetX},${startY + controlOffsetY} 
+       ${endX - controlOffsetX},${endY - controlOffsetY} 
+       ${endX},${endY}`;
+  };
+
+  const calculateMainX = () => {
+    return 400;
+  };
+
+  const branches = flowData.filter((item) => item.type !== "main");
+  const branchSpacing = 900 / (branches.length + 1);
+
+  return (
+    <div className="h-full">
+      {/* Header */}
+      <div className="border-b border-border w-full h-11 flex items-center bg-gray-900">
+        <div className="ml-5 flex gap-2 items-center">
+          <Code className="text-tertiaryBorder" size={20} />
+          <p className="text-xs text-accent">Team - Engineering</p>
+          <span className="text-sidenav">&gt;</span>
+          <p className="text-xs text-white">Team Flow</p>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="p-6 max-w-[1320px] mx-auto">
+        <h1 className="text-lg font-semibold text-white mb-2">Team Flow</h1>
+        <p className="text-gray-400 text-[13px] mb-6">
+          Visualize your team's development progress and activity in real-time.
+        </p>
+
+        {/* Flow Diagram */}
+        <div className="bg-dashboard border border-border rounded-[5px] p-4 relative">
+          <svg className="w-full h-[800px]" viewBox="0 0 800 1000">
+            {/* Main Flow Line */}
+            <motion.path
+              d={mainLinePoints}
+              stroke="#34D399"
+              strokeWidth="3"
+              fill="none"
+              initial={{ pathLength: 0 }}
+              animate={{ pathLength: 1 }}
+              transition={{ duration: 2, ease: "easeInOut" }}
+            />
+
+            {/* Flow Nodes */}
+            {flowData.map((item, index) => {
+              if (item.type === "main") {
+                const mainX = calculateMainX();
+                const mainY = 50;
+
+                return (
+                  <motion.g
+                    key={item.id}
+                    initial={{ opacity: 0, scale: 0 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.5, delay: 0.5 }}
+                  >
+                    <circle
+                      cx={mainX}
+                      cy={mainY}
+                      r="28"
+                      fill="#1F2937"
+                      stroke="#4B5563"
+                      strokeWidth="2"
+                    />
+                    <circle cx={mainX} cy={mainY} r="24" fill="#2D3748" />
+                    <foreignObject
+                      x={mainX - 16}
+                      y={mainY - 16}
+                      width={32}
+                      height={32}
+                    >
+                      <div className="text-white flex justify-center items-center h-full w-full">
+                        {item.icon}
+                      </div>
+                    </foreignObject>
+                    {/* User Name */}
+                    <text
+                      x={mainX + 40}
+                      y={mainY}
+                      fill="#D1D5DB"
+                      fontSize="14"
+                      fontWeight="bold"
+                      textAnchor="start"
+                      alignmentBaseline="middle"
+                    >
+                      {item.user}
+                    </text>
+                    {/* Branch Name */}
+                    <text
+                      x={mainX + 40}
+                      y={mainY + 20}
+                      fill="#9CA3AF"
+                      fontSize="12"
+                      textAnchor="start"
+                    >
+                      {item.branchName}
+                    </text>
+                  </motion.g>
+                );
+              } else {
+                const branchIndex = branches.indexOf(item) + 1;
+                const yPos = 50 + branchSpacing * branchIndex;
+                const xPos = item.type === "branch" ? 250 : 550;
+
+                const endX = xPos;
+                const endY = yPos;
+                const branchPath = getBranchPath(400, yPos, endX, endY);
+                const mergePath = item.mergedToMain
+                  ? getBranchPath(endX, endY, 400, endY + 120, true)
+                  : null;
+
+                return (
+                  <g
+                    key={item.id}
+                    onMouseEnter={() => setHoveredBranch(item.id)}
+                    onMouseLeave={() => setHoveredBranch(null)}
+                  >
+                    {/* Branch Path */}
+                    <motion.path
+                      d={branchPath}
+                      stroke="#34D399"
+                      strokeWidth="2"
+                      fill="none"
+                      initial={{ pathLength: 0 }}
+                      animate={{ pathLength: 1 }}
+                      transition={{
+                        duration: 1.5,
+                        delay: index * 0.3,
+                        ease: "easeInOut",
+                      }}
+                    />
+
+                    {/* Merge Path */}
+                    {mergePath && (
+                      <motion.path
+                        d={mergePath}
+                        stroke="#34D399"
+                        strokeWidth="2"
+                        fill="none"
+                        initial={{ pathLength: 0 }}
+                        animate={{ pathLength: 1 }}
+                        transition={{
+                          duration: 1.5,
+                          delay: index * 0.3 + 1,
+                          ease: "easeInOut",
+                        }}
+                      />
+                    )}
+
+                    {/* Branch Node */}
+                    <motion.g
+                      initial={{ opacity: 0, scale: 0 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{
+                        duration: 0.5,
+                        delay: index * 0.3 + 1,
+                        ease: "easeOut",
+                      }}
+                      whileHover={{ scale: 1.1 }}
+                    >
+                      <circle
+                        cx={endX}
+                        cy={endY}
+                        r="28"
+                        fill="#1F2937"
+                        stroke={
+                          hoveredBranch === item.id ? "#34D399" : "#4B5563"
+                        }
+                        strokeWidth="2"
+                      />
+                      <circle cx={endX} cy={endY} r="24" fill="#2D3748" />
+                      <foreignObject
+                        x={endX - 8}
+                        y={endY - 8}
+                        width={16}
+                        height={16}
+                      >
+                        <div className="text-white flex justify-center items-center h-full w-full">
+                          {item.icon}
+                        </div>
+                      </foreignObject>
+                      {/* User Name */}
+                      <text
+                        x={endX + (item.type === "branch" ? -40 : 40)}
+                        y={endY}
+                        fill="#D1D5DB"
+                        fontSize="14"
+                        fontWeight="bold"
+                        textAnchor={item.type === "branch" ? "end" : "start"}
+                        alignmentBaseline="middle"
+                      >
+                        {item.user}
+                      </text>
+                      {/* Branch Name */}
+                      <text
+                        x={endX + (item.type === "branch" ? -40 : 40)}
+                        y={endY + 20}
+                        fill="#9CA3AF"
+                        fontSize="12"
+                        textAnchor={item.type === "branch" ? "end" : "start"}
+                      >
+                        {item.branchName}
+                      </text>
+                    </motion.g>
+
+                    {/* Tooltip on Hover */}
+                    <AnimatePresence>
+                      {hoveredBranch === item.id && (
+                        <motion.foreignObject
+                          x={endX + (item.type === "branch" ? -300 : 40)}
+                          y={endY - 70}
+                          width={260}
+                          height={140}
+                          initial={{ opacity: 0, scale: 0.8 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.8 }}
+                          transition={{ duration: 0.2 }}
+                        >
+                          <div className="bg-dashboard border border-border rounded-[5px] p-3 shadow-lg text-white text-xs">
+                            <h3 className="text-white text-sm font-semibold mb-2">
+                              {item.action}
+                            </h3>
+                            <p className="text-gray-400 text-xs mb-2">
+                              {item.additionalInfo}
+                            </p>
+                            <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+                              <div className="flex items-center">
+                                <span className="w-2 h-2 bg-accent rounded-full mr-2"></span>
+                                <span className="text-accent">
+                                  Commits: {item.commits}
+                                </span>
+                              </div>
+                              <div className="flex items-center">
+                                <span className="w-2 h-2 bg-gray-500 rounded-full mr-2"></span>
+                                <span className="text-gray-400">
+                                  Time: {item.time}
+                                </span>
+                              </div>
+                              <div className="flex items-center">
+                                <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                                <span className="text-green-400">
+                                  Added: +{item.linesAdded}
+                                </span>
+                              </div>
+                              <div className="flex items-center">
+                                <span className="w-2 h-2 bg-red-500 rounded-full mr-2"></span>
+                                <span className="text-red-400">
+                                  Removed: -{item.linesRemoved}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </motion.foreignObject>
+                      )}
+                    </AnimatePresence>
+                  </g>
+                );
+              }
+            })}
+          </svg>
+        </div>
+
+        {/* Description */}
+        <p className="text-gray-400 text-sm mt-6">
+          Projects let you maintain multiple versions of your team's codebase
+          and easily merge your changes together when you're ready. Anyone on
+          your team can "fork" (create a new copy of the code), make changes,
+          preview what changed, and then merge those changes back.
+        </p>
+      </div>
+    </div>
+  );
+};
+
+export default FlowDiagram;
+
+
+
+
+----------------------
+
+
+please fix code 1, so its verticle while keeping all the items the same, just flipped vertically 
