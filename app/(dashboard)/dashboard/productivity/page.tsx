@@ -12,18 +12,255 @@ import {
   Zap,
   CheckCircle,
   PieChart,
-  LineChart,
+  BarChart,
   Clock,
   MoreHorizontal,
   Plus,
   Minus,
   FileCode,
+  Target,
+  AlertCircle,
+  X,
+  User,
+  Check,
+  Brain,
+  ShieldCheck,
+  MessageSquare,
+  TrendingUp,
+  AlertTriangle,
+  Server,
 } from "lucide-react";
+import { Button } from "@mui/material";
 
+const CommitModal = ({ commit, onClose, isOpen }) => {
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+        >
+          <motion.div
+            className="bg-primary rounded-[5px] border border-border w-[900px] flex flex-col overflow-hidden"
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.9, opacity: 0 }}
+            transition={{ type: "spring", damping: 25, stiffness: 300 }}
+          >
+            {/* Header */}
+            <div className="border-b border-border h-[48px] px-5 flex justify-between items-center">
+              <div className="flex items-center text-sm text-white">
+                <GitBranch size={16} className="mr-2" />
+                <span>Commit Details</span>
+              </div>
+              <button
+                onClick={onClose}
+                className="text-gray-400 hover:text-white"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="flex p-5 space-x-5">
+              {/* Left Column */}
+              <div className="w-1/3 space-y-4">
+                <InfoSection title="Basic Info">
+                  <InfoItem
+                    icon={<User size={14} />}
+                    label="Author"
+                    value={commit.user}
+                  />
+                  <InfoItem
+                    icon={<Clock size={14} />}
+                    label="Time"
+                    value={commit.time}
+                  />
+                  <InfoItem
+                    icon={<GitBranch size={14} />}
+                    label="Branch"
+                    value={commit.branchName}
+                  />
+                  <InfoItem
+                    icon={<GitCommit size={14} />}
+                    label="Parent"
+                    value="abc123..."
+                  />
+                </InfoSection>
+                <InfoSection title="Changes">
+                  <InfoItem
+                    icon={<Plus size={14} />}
+                    label="Added"
+                    value={`+${commit.linesAdded} lines`}
+                    valueColor="text-green-400"
+                  />
+                  <InfoItem
+                    icon={<Minus size={14} />}
+                    label="Removed"
+                    value={`-${commit.linesRemoved} lines`}
+                    valueColor="text-red-400"
+                  />
+                  <InfoItem
+                    icon={<FileCode size={14} />}
+                    label="Files Changed"
+                    value="8"
+                  />
+                </InfoSection>
+                <InfoSection title="Performance Metrics">
+                  <InfoItem
+                    icon={<Clock size={14} />}
+                    label="Build Time"
+                    value="45s"
+                  />
+                  <InfoItem
+                    icon={<ShieldCheck size={14} />}
+                    label="Test Coverage"
+                    value="85%"
+                  />
+                  <InfoItem
+                    icon={<TrendingUp size={14} />}
+                    label="Performance Impact"
+                    value="+2%"
+                    valueColor="text-green-400"
+                  />
+                </InfoSection>
+              </div>
+
+              {/* Right Column */}
+              <div className="w-2/3 space-y-4">
+                <InfoSection title="Commit Message">
+                  <p className="text-white text-sm">{commit.additionalInfo}</p>
+                </InfoSection>
+                <InfoSection title="AI Insights">
+                  <AIInsight
+                    icon={<Brain size={16} className="text-purple-400" />}
+                    title="Impact Analysis"
+                    description="This commit primarily affects the UI components. Consider testing related features thoroughly, especially in the following areas:"
+                    items={[
+                      "User authentication flow",
+                      "Dashboard responsiveness",
+                      "Form validation in affected components",
+                    ]}
+                  />
+                  <AIInsight
+                    icon={<Zap size={16} className="text-yellow-400" />}
+                    title="Code Quality"
+                    description="The changes improve code readability and follow best practices. Notable improvements:"
+                    items={[
+                      "Increased use of meaningful variable names",
+                      "Improved function decomposition",
+                      "Added comments for complex logic",
+                    ]}
+                  />
+                  <AIInsight
+                    icon={
+                      <AlertTriangle size={16} className="text-orange-400" />
+                    }
+                    title="Potential Risks"
+                    description="While the changes are generally positive, consider the following risks:"
+                    items={[
+                      "Possible performance impact on larger datasets",
+                      "Backwards compatibility with older browser versions",
+                    ]}
+                  />
+                </InfoSection>
+              </div>
+            </div>
+
+            {/* Security Scan - Full Width */}
+            <div className="px-5 pb-5">
+              <InfoSection title="Security Scan">
+                <div className="grid grid-cols-2 gap-3">
+                  <SecurityItem
+                    icon={<ShieldCheck size={14} />}
+                    text="No vulnerabilities found"
+                    color="text-green-400"
+                  />
+                  <SecurityItem
+                    icon={<ShieldCheck size={14} />}
+                    text="Compliance status: Passed"
+                    color="text-green-400"
+                  />
+                  <SecurityItem
+                    icon={<AlertTriangle size={14} />}
+                    text="2 low-severity warnings (see details)"
+                    color="text-yellow-400"
+                  />
+                  <SecurityItem
+                    icon={<Clock size={14} />}
+                    text="Scan completed in 1m 30s"
+                    color="text-blue-400"
+                  />
+                </div>
+              </InfoSection>
+            </div>
+
+            {/* Footer */}
+            <div className="border-t border-border h-[48px] px-5 flex justify-between items-center">
+              <div className="text-gray-400 text-xs">
+                Commit Hash: abc123...
+              </div>
+              <button
+                onClick={onClose}
+                className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-1.5 rounded-md text-sm transition-colors duration-200"
+              >
+                Close
+              </button>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+};
+
+const InfoSection = ({ title, children }) => (
+  <div className="bg-dashboard border border-border rounded-[5px] p-3">
+    <h3 className="text-gray-300 text-sm font-semibold mb-2">{title}</h3>
+    <div className="space-y-2">{children}</div>
+  </div>
+);
+
+const InfoItem = ({ icon, label, value, valueColor = "text-white" }) => (
+  <div className="flex items-center justify-between">
+    <span className="text-gray-400 text-xs flex items-center">
+      {icon && <span className="mr-2">{icon}</span>}
+      {label}
+    </span>
+    <span className={`${valueColor} text-xs font-medium`}>{value}</span>
+  </div>
+);
+
+const AIInsight = ({ icon, title, description, items }) => (
+  <div className="flex items-start mt-3">
+    <span className="mr-2 flex-shrink-0 mt-1">{icon}</span>
+    <div>
+      <h4 className="text-white text-sm font-semibold">{title}</h4>
+      <p className="text-gray-300 text-xs mt-1">{description}</p>
+      {items && (
+        <ul className="list-disc list-inside text-gray-300 text-xs mt-1">
+          {items.map((item, index) => (
+            <li key={index}>{item}</li>
+          ))}
+        </ul>
+      )}
+    </div>
+  </div>
+);
+
+const SecurityItem = ({ icon, text, color }) => (
+  <div className="flex items-center">
+    <span className={`${color} mr-2`}>{icon}</span>
+    <span className={`${color} text-xs`}>{text}</span>
+  </div>
+);
 const Dashboard = () => {
   const [hoveredBranch, setHoveredBranch] = useState(null);
+  const [selectedCommit, setSelectedCommit] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Flow Data with 'merged' property and additional branches
   const flowData = [
     {
       id: 1,
@@ -221,8 +458,6 @@ const Dashboard = () => {
   const mainSpacing = 950 / (mainCommits.length + 1);
   const branchSpacing = 50;
 
-  // Function to render commit history
-  // Function to render commit history
   const renderCommitHistory = () => (
     <div className="bg-dashboard border border-border rounded-lg p-4 mb-4 flex-grow overflow-y-auto">
       <div className="flex justify-between items-center mb-3">
@@ -236,7 +471,11 @@ const Dashboard = () => {
           .map((item) => (
             <div
               key={item.id}
-              className="border border-border rounded-lg p-2 text-xs flex items-center"
+              className="border border-border rounded-lg p-2 text-xs flex items-center cursor-pointer hover:bg-gray-800 transition-colors duration-200"
+              onClick={() => {
+                setSelectedCommit(item);
+                setIsModalOpen(true);
+              }}
             >
               <div className="flex-shrink-0 mr-2">
                 <span className="w-6 h-6 rounded-full bg-dashboard flex items-center justify-center">
@@ -336,7 +575,7 @@ const Dashboard = () => {
                         <motion.path
                           key={`path-${branch.id}`}
                           d={branchPath}
-                          stroke="#34D399"
+                          stroke={branch.merged ? "#1F2937" : "#34D399"}
                           strokeWidth="2"
                           fill="none"
                           initial={{ pathLength: 0 }}
@@ -439,6 +678,26 @@ const Dashboard = () => {
                       const endX = 150;
                       const endY = startY - branchSpacing * (branchIndex + 1);
 
+                      // Determine branch status
+                      let status;
+                      if (branch.merged) {
+                        status = "Merged";
+                      } else if (branch.commits > 5) {
+                        status = "Ready for Review";
+                      } else if (branch.commits > 0) {
+                        status = "In Progress";
+                      } else {
+                        status = "Just Created";
+                      }
+
+                      // Define status colors
+                      const statusColors = {
+                        Merged: "#4B5563",
+                        "Ready for Review": "#3B82F6",
+                        "In Progress": "#10B981",
+                        "Just Created": "#F59E0B",
+                      };
+
                       return (
                         <motion.g
                           key={`node-${branch.id}`}
@@ -453,6 +712,7 @@ const Dashboard = () => {
                           }}
                           style={{
                             cursor: "pointer",
+                            opacity: branch.merged ? 0.5 : 1,
                           }}
                         >
                           {/* Branch Node */}
@@ -460,8 +720,8 @@ const Dashboard = () => {
                             cx={endX}
                             cy={endY}
                             r="15"
-                            fill="#2D3748"
-                            stroke="#4B5563"
+                            fill={branch.merged ? "#1F2937" : "#2D3748"}
+                            stroke={branch.merged ? "#374151" : "#4B5563"}
                             strokeWidth="2"
                           />
                           <foreignObject
@@ -470,14 +730,11 @@ const Dashboard = () => {
                             width={16}
                             height={16}
                           >
-                            <div className="flex items-center justify-center h-full w-full text-white">
+                            <div className="flex items-center justify-center h-full w-full text-gray-400">
                               {branch.merged ? (
-                                <CheckCircle
-                                  size={12}
-                                  className="text-green-400"
-                                />
+                                <CheckCircle size={12} />
                               ) : (
-                                <GitBranch size={12} />
+                                <GitBranch size={12} className="text-white" />
                               )}
                             </div>
                           </foreignObject>
@@ -486,7 +743,7 @@ const Dashboard = () => {
                           <text
                             x={endX + 30}
                             y={endY - 2}
-                            fill="#D1D5DB"
+                            fill={branch.merged ? "#6B7280" : "#D1D5DB"}
                             fontSize="12"
                             textAnchor="start"
                             dominantBaseline="middle"
@@ -496,12 +753,37 @@ const Dashboard = () => {
                           <text
                             x={endX + 30}
                             y={endY + 12}
-                            fill="#9CA3AF"
+                            fill={branch.merged ? "#4B5563" : "#9CA3AF"}
                             fontSize="10"
                             textAnchor="start"
                             dominantBaseline="middle"
                           >
                             {branch.time}
+                          </text>
+
+                          {/* Branch Status Label */}
+                          <rect
+                            x={endX + 220}
+                            y={endY - 10}
+                            width={80}
+                            height={20}
+                            rx={10}
+                            ry={10}
+                            fill={statusColors[status]}
+                            fillOpacity={0.1}
+                            stroke={statusColors[status]}
+                            strokeWidth={1}
+                          />
+                          <text
+                            x={endX + 260}
+                            y={endY}
+                            fill={statusColors[status]}
+                            fontSize="10"
+                            textAnchor="middle"
+                            dominantBaseline="middle"
+                            fontWeight="500"
+                          >
+                            {status}
                           </text>
                         </motion.g>
                       );
@@ -601,60 +883,119 @@ const Dashboard = () => {
           </div>
 
           {/* Right Section: Productivity Tracker */}
-          <div className="w-full lg:w-1/6 space-y-4">
-            <div className="bg-dashboard border border-border rounded-[5px] p-3">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-white text-xs font-semibold">
+          <div className="w-full lg:w-1/4 space-y-3">
+            {/* Code Coverage */}
+            <div className="bg-dashboard border border-border rounded-lg p-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-white text-sm font-semibold">
                   Code Coverage
                 </h3>
-                <PieChart size={24} className="text-green-400" />
+                <PieChart size={18} className="text-green-400" />
               </div>
-              <p className="text-2xl font-bold text-white">85%</p>
-              <p className="text-gray-400 text-[10px]">+5% from last week</p>
+              <div className="flex items-baseline justify-between mt-2">
+                <p className="text-2xl font-bold text-white">85%</p>
+                <p className="text-green-400 text-xs">+5% from last week</p>
+              </div>
             </div>
-            <div className="bg-dashboard border border-border rounded-[5px] p-3">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-white text-xs font-semibold">
+
+            {/* Pull Requests */}
+            <div className="bg-dashboard border border-border rounded-lg p-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-white text-sm font-semibold">
                   Pull Requests
                 </h3>
-                <GitBranch size={24} className="text-blue-400" />
+                <GitBranch size={18} className="text-blue-400" />
               </div>
-              <p className="text-2xl font-bold text-white">12</p>
-              <p className="text-gray-400 text-[10px]">3 awaiting review</p>
+              <div className="flex items-baseline justify-between mt-2">
+                <p className="text-2xl font-bold text-white">12</p>
+                <p className="text-blue-400 text-xs">3 awaiting review</p>
+              </div>
             </div>
-            <div className="bg-dashboard border border-border rounded-[5px] p-3">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-white text-xs font-semibold">
+
+            {/* Build Status */}
+            <div className="bg-dashboard border border-border rounded-lg p-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-white text-sm font-semibold">
                   Build Status
                 </h3>
-                <CheckCircle size={24} className="text-green-400" />
+                <CheckCircle size={18} className="text-green-400" />
               </div>
-              <p className="text-2xl font-bold text-white">All Passing</p>
-              <p className="text-gray-400 text-[10px]">
-                Last build: 10 min ago
-              </p>
+              <div className="flex items-baseline justify-between mt-2">
+                <p className="text-2xl font-bold text-white">Passing</p>
+                <p className="text-gray-400 text-xs">Last build: 10 min ago</p>
+              </div>
             </div>
-            <div className="bg-dashboard border border-border rounded-[5px] p-3">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-white text-xs font-semibold">Code Churn</h3>
-                <LineChart size={24} className="text-yellow-400" />
+
+            {/* Velocity */}
+            <div className="bg-dashboard border border-border rounded-lg p-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-white text-sm font-semibold">Velocity</h3>
+                <Zap size={18} className="text-yellow-400" />
               </div>
-              <p className="text-2xl font-bold text-white">-12%</p>
-              <p className="text-gray-400 text-[10px]">Decreased this sprint</p>
+              <div className="flex items-baseline justify-between mt-2">
+                <p className="text-2xl font-bold text-white">24 pts</p>
+                <p className="text-yellow-400 text-xs">+2 pts this sprint</p>
+              </div>
+            </div>
+
+            {/* Bug Rate */}
+            <div className="bg-dashboard border border-border rounded-lg p-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-white text-sm font-semibold">Bug Rate</h3>
+                <AlertCircle size={18} className="text-red-400" />
+              </div>
+              <div className="flex items-baseline justify-between mt-2">
+                <p className="text-2xl font-bold text-white">2.5%</p>
+                <p className="text-red-400 text-xs">-0.5% from last month</p>
+              </div>
+            </div>
+
+            {/* Code Review Time */}
+            <div className="bg-dashboard border border-border rounded-lg p-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-white text-sm font-semibold">
+                  Review Time
+                </h3>
+                <Clock size={18} className="text-indigo-400" />
+              </div>
+              <div className="flex items-baseline justify-between mt-2">
+                <p className="text-2xl font-bold text-white">4.2h</p>
+                <p className="text-gray-400 text-xs">Avg. time to review</p>
+              </div>
+            </div>
+
+            {/* Sprint Progress */}
+            <div className="bg-dashboard border border-border rounded-lg p-3">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-white text-sm font-semibold">
+                  Sprint Progress
+                </h3>
+                <Target size={18} className="text-purple-400" />
+              </div>
+              <div className="w-full bg-gray-700 rounded-full h-2 mb-2">
+                <div
+                  className="bg-purple-400 h-2 rounded-full"
+                  style={{ width: "70%" }}
+                ></div>
+              </div>
+              <div className="flex justify-between text-xs">
+                <p className="text-purple-400">70% completed</p>
+                <p className="text-gray-400">7/10 days</p>
+              </div>
             </div>
           </div>
         </div>
-
-        {/* Informational Paragraph */}
-        <div className="p-4 max-w-[1200px] mx-auto">
-          <p className="text-gray-400 text-sm">
-            Projects let you maintain multiple versions of your team's codebase
-            and easily merge your changes together when you're ready. Anyone on
-            your team can "fork" (create a new copy of the code), make changes,
-            preview what changed, and then merge those changes back.
-          </p>
-        </div>
       </div>
+      {selectedCommit && (
+        <CommitModal
+          commit={selectedCommit}
+          onClose={() => {
+            setIsModalOpen(false);
+            setSelectedCommit(null);
+          }}
+          isOpen={isModalOpen}
+        />
+      )}
     </div>
   );
 };
